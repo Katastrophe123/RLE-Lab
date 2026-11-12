@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 5 · What GRPO Gets Wrong · RLE Lab</title>
+<meta name="author" content="Kanishk Singh Parihar">
+<script>(function(){var t=null;try{t=localStorage.getItem("rle-theme")}catch(e){}if(!t){try{t=JSON.parse(window.name||"{}")["rle-theme"]}catch(e){}}if(t&&t!=="system")document.documentElement.setAttribute("data-mode",t)})()</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="stylesheet" href="../../assets/day.css">
+<script src="../../assets/site.js" defer></script>
+<style>
+.pgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; }
+.ctl { display: grid; grid-template-columns: 120px 1fr 64px; gap: 10px; align-items: center; margin: 8px 0; }
+.ctl output { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+.arena-in { width: 100%; font-family: var(--mono); font-size: 15px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.flag { margin-top: 10px; padding: 10px 12px; border-radius: 12px; font-weight: 500; border-left: 5px solid var(--c); background: var(--surface-2); }
+.advgrid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 14px; }
+.acol h4 { margin: 0 0 6px; font-size: 14px; color: var(--muted); }
+.arow { display: grid; grid-template-columns: 44px 1fr 74px; gap: 8px; align-items: center; margin: 4px 0; font-family: var(--mono); font-size: 14px; }
+.arow b { text-align: right; font-variant-numeric: tabular-nums; }
+.atrack { position: relative; height: 16px; border-radius: 8px; background: var(--bg-2); }
+.atrack::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; background: var(--line); }
+.atrack i { position: absolute; top: 0; height: 100%; border-radius: 8px; }
+.ok1 { color: var(--good); font-weight: 700; } .bad1 { color: var(--bad); font-weight: 700; }
+.note-ill { color: var(--muted); font-size: 13px; }
+.lt th, .lt td { padding: 8px 6px; font-size: 14px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<canvas id="confetti" aria-hidden="true"></canvas>
+<header class="site-header">
+  <div class="site-bar">
+    <a class="brand" href="../../index.html"><span class="mark" aria-hidden="true"></span>RLE Lab</a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="../../index.html">Roadmap</a>
+      <a href="../day1/index.html">Day 1</a>
+      <a href="../day2/index.html">Day 2</a>
+      <a href="../day3/index.html">Day 3</a>
+      <a href="../day4/index.html">Day 4</a>
+      <a href="index.html" aria-current="page">Day 5</a>
+    </nav>
+    <button class="theme-btn" data-theme-btn type="button">Theme</button>
+  </div>
+  <div class="daybar">
+    <nav class="tabs" aria-label="Day 5 sections">
+      <a class="tab" href="#lecture" data-v="lecture" style="--c: var(--c1)"><span class="dot"></span>1 · Lecture<span class="tick">✓</span></a>
+      <a class="tab" href="#notes" data-v="notes" style="--c: var(--c2)"><span class="dot"></span>2 · Notes<span class="tick">✓</span></a>
+      <a class="tab" href="#playground" data-v="playground" style="--c: var(--c3)"><span class="dot"></span>3 · Playground<span class="tick">✓</span></a>
+      <a class="tab" href="#quiz" data-v="quiz" style="--c: var(--c4)"><span class="dot"></span>4 · Quiz<span class="tick">✓</span></a>
+      <a class="tab" href="#checkpoint" data-v="checkpoint" style="--c: var(--good)"><span class="dot"></span>5 · Checkpoint<span class="tick">✓</span></a>
+    </nav>
+    <div class="prog"><span id="progTxt">0 of 5 done</span><div class="ring" id="ring"><span id="ringPct">0%</span></div></div>
+  </div>
+</header>
+
+<main>
+<section class="view" id="v-lecture">
+  <span class="eyebrow">Day 5 · 6 min lecture · 2 hours today</span>
+  <h2>Retrain with v2, and what GRPO gets wrong</h2>
+  <p class="lead">Your GPU retrains with verifier v2 while you learn the clipped objective, the KL leash, GRPO's two hidden biases, and DAPO's four fixes.</p>
+  <div class="lecture">
+    <div>
+      <video id="vid" controls preload="metadata" src="day5_part1.mp4#t=0.6"></video>
+      <p style="color:var(--muted);font-size:14px;margin:8px 0 0">Part <span id="partNo">1</span> of 2 · part 2 starts automatically.</p>
+    </div>
+    <div class="card"><h3 style="margin-bottom:10px">Chapters</h3><div class="chapters" id="chapters"></div></div>
+  </div>
+</section>
+
+<section class="view" id="v-notes">
+  <span class="eyebrow">Day 5 · Notes</span>
+  <h2>The objective, line by line</h2>
+  <p class="lead">GRPO works, but some of its normalisation choices quietly bias what the model learns. Knowing them is what lets you read a paper's recipe and set TRL correctly.</p>
+
+  <div class="card note" style="--c: var(--good)">
+    <div class="head"><div class="num">1</div><h3>Start the v2 run first (15 minutes)</h3></div>
+    <ol>
+      <li>Copy your Day 3 notebook. Swap <code>verifier_v1</code> for <code>verifier_v2</code> in the reward functions. <b>Change nothing else</b>: same model, data, prompt, seed, steps, learning rate.</li>
+      <li>On Kaggle, use <b>Save Version → Save &amp; Run All</b> so it runs in the background while you study. Log to the same project as Day 3 with a run name like <code>v2-verifier</code>.</li>
+      <li>Check the first few logged steps: reward columns present, no errors, lengths under the cap. Then leave it.</li>
+    </ol>
+    <p class="note-ill">One change per run. If you also changed the learning rate, tomorrow you couldn't tell which change caused what.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--c1)">
+    <div class="head"><div class="num">2</div><h3>The clipped objective</h3></div>
+    <p>For each token, the ratio <code>r = π_new(token) / π_old(token)</code> compares the policy being trained with the one that sampled the rollout. The per-token objective (to maximise) is:</p>
+<pre class="code">objective = min( r · A,  clip(r, 1 − ε_low, 1 + ε_high) · A )      <span class="cm"># usually ε = 0.2</span></pre>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Advantage</th><th>Ratio</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td>A &gt; 0 (good answer)</td><td>r &gt; 1 + ε</td><td>Capped: gradient is 0. The token already rose enough this step.</td></tr>
+        <tr><td>A &gt; 0</td><td>r &lt; 1 + ε</td><td>Normal push up</td></tr>
+        <tr><td>A &lt; 0 (bad answer)</td><td>r &lt; 1 − ε</td><td>Capped: gradient is 0. The token already fell enough.</td></tr>
+        <tr><td>A &lt; 0</td><td>r &gt; 1 − ε</td><td>Normal push down, unclipped if r grew (the min keeps the worse case)</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="card note" style="--c: var(--c4)">
+    <div class="head"><div class="num">3</div><h3>The KL leash</h3></div>
+    <p><code>loss = −objective + β · KL(π ‖ π_ref)</code>, where <code>π_ref</code> is a frozen copy of the starting model. It slows drift and some reward hacking, and costs memory for the reference model.</p>
+    <p>DAPO sets <code>β = 0</code>, arguing that for long reasoning the model needs to move far from where it started. Recent TRL versions also default to <code>beta=0.0</code>, and only log a <code>kl</code> curve when β &gt; 0. With no leash, the verifier is the only thing steering the model, which is why Days 2 and 4 matter.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--c3)">
+    <div class="head"><div class="num">4</div><h3>Bias 1: dividing by the group's std</h3></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Group rewards</th><th>GRPO (÷ std)</th><th>Dr. GRPO (mean only)</th></tr></thead>
+      <tbody>
+        <tr><td><code>[1, 0, 0, 0]</code> real win</td><td>+1.73, −0.58 ×3</td><td>+0.75, −0.25 ×3</td></tr>
+        <tr><td><code>[0.1, 0, 0, 0]</code> format bonus</td><td>+1.73, −0.58 ×3</td><td>+0.075, −0.025 ×3</td></tr>
+      </tbody>
+    </table></div>
+    <p>Dividing by the std makes every group's advantages the same size, however small the reward gap. Groups with little spread (nearly all right or nearly all wrong) get their tiny differences inflated. Dr. GRPO (Liu et al., 2025) calls this a difficulty bias and drops the division. TRL: <code>scale_rewards</code> (<code>"group"</code>, <code>"batch"</code>, or off).</p>
+  </div>
+
+  <div class="card note" style="--c: var(--c2)">
+    <div class="head"><div class="num">5</div><h3>Bias 2: averaging per answer</h3></div>
+    <p>GRPO's loss averages over each answer's own tokens, then over answers. A token's weight is <code>1 / (its answer's length)</code>. A 500-token wrong answer spreads its penalty over 500 tokens: each gets a fifth of what a 100-token wrong answer's tokens get. Long wrong answers become cheap, and lengths drift up. (For right answers the effect flips: short ones get a stronger push.)</p>
+<pre class="code">grpo     = mean over answers of ( Σ token losses / |answer| )     <span class="cm"># length bias</span>
+dr_grpo  = Σ all token losses / ( G · max_completion_length )      <span class="cm"># constant</span>
+dapo     = Σ all token losses / total tokens in the batch          <span class="cm"># token-level</span></pre>
+  </div>
+
+  <div class="card note" style="--c: var(--c5)">
+    <div class="head"><div class="num">6</div><h3>DAPO's four fixes (Yu et al., 2025)</h3></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Fix</th><th>Problem it solves</th><th>TRL setting</th></tr></thead>
+      <tbody>
+        <tr><td><b>Clip-higher</b> (ε_low 0.2, ε_high 0.28)</td><td>Entropy collapse: low-probability tokens can't grow, so exploration dies</td><td><code>epsilon</code>, <code>epsilon_high</code></td></tr>
+        <tr><td><b>Dynamic sampling</b></td><td>Groups that all score the same give zero gradient</td><td>Not built in; filter in your data pipeline</td></tr>
+        <tr><td><b>Token-level loss</b></td><td>Length bias of per-answer averaging</td><td><code>loss_type="dapo"</code></td></tr>
+        <tr><td><b>Overlong shaping</b></td><td>Truncated answers get noisy rewards</td><td><code>mask_truncated_completions=True</code> (filtering)</td></tr>
+      </tbody>
+    </table></div>
+    <p>Their ablation on Qwen2.5-32B, AIME 2024: naive GRPO 30, then overlong filtering 36, clip-higher 38, soft overlong punishment 41, token-level loss 42, dynamic sampling 50. They also drop the KL term.</p>
+    <p class="note-ill">TRL option names and defaults have changed across versions (for example, <code>loss_type</code>'s default). Check the GRPOConfig docs for the version you have installed.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--good)">
+    <div class="head"><div class="num">7</div><h3>Deliverable: notes/grpo_variants.md</h3></div>
+<pre class="code" id="tpl"># GRPO variants (Day 5)
+
+| Problem | Fix | Paper | TRL setting | What I set in run v2 |
+|---|---|---|---|---|
+| Big policy jumps | PPO clip, ε = 0.2 | PPO (2017) | epsilon | |
+| Drift from base model | KL penalty, β | (often off) | beta | |
+| Std inflates tiny gaps | mean-only advantage | Dr. GRPO | scale_rewards | |
+| Long wrong answers cheap | constant / token-level norm | Dr. GRPO / DAPO | loss_type | |
+| Exploration collapses | clip-higher | DAPO | epsilon_high | |
+| Zero-signal groups | dynamic sampling | DAPO | (not built in) | |
+| Truncated answers | overlong filter / soft penalty | DAPO | mask_truncated_completions | |
+
+## Which of these does my TRL version do by default?
+- loss_type default: __
+- scale_rewards default: __
+- beta default: __</pre>
+    <div class="row" style="margin-top:8px"><button class="btn ghost" data-copy="tpl">Copy template</button></div>
+  </div>
+
+  <div class="card note" style="--c: var(--c5)">
+    <div class="head"><div class="num">8</div><h3>Flip cards</h3></div>
+    <div class="flips" id="flips"></div>
+  </div>
+</section>
+
+<section class="view" id="v-playground">
+  <span class="eyebrow">Day 5 · Playground</span>
+  <h2>Pull the levers</h2>
+  <p class="lead">Three small labs: the clip band, the std division, and the length bias. Each computes the same math as your checkpoint.</p>
+  <div class="pgrid">
+    <div class="card">
+      <h3>Clip explorer</h3>
+      <canvas id="clipCv" width="640" height="360" style="width:100%;height:auto;border-radius:12px;background:var(--bg-2)"></canvas>
+      <div class="ctl"><label for="cA">advantage A</label><input id="cA" type="range" min="-2" max="2" step="0.1" value="1"><output id="cAo">1.0</output></div>
+      <div class="ctl"><label for="cR">ratio r</label><input id="cR" type="range" min="0" max="2" step="0.01" value="1.4"><output id="cRo">1.40</output></div>
+      <div class="ctl"><label for="cL">ε_low</label><input id="cL" type="range" min="0.05" max="0.5" step="0.01" value="0.2"><output id="cLo">0.20</output></div>
+      <div class="ctl"><label for="cH">ε_high</label><input id="cH" type="range" min="0.05" max="0.5" step="0.01" value="0.2"><output id="cHo">0.20</output></div>
+      <div class="flag" id="cFlag" style="--c: var(--c1)"></div>
+    </div>
+    <div class="card">
+      <h3>Std or no std?</h3>
+      <label for="advIn" style="font-weight:600;font-size:14px;color:var(--muted)">Group rewards (comma-separated)</label>
+      <input id="advIn" class="arena-in" type="text" value="0.1, 0, 0, 0">
+      <div class="row" style="margin-top:8px;flex-wrap:wrap">
+        <button class="btn ghost" data-rw="1, 0, 0, 0">1 right</button><button class="btn ghost" data-rw="0.1, 0, 0, 0">format only</button><button class="btn ghost" data-rw="1, 1, 1, 0">3 right</button><button class="btn ghost" data-rw="1, 1, 1, 1">all right</button>
+      </div>
+      <div class="advgrid" id="advOut"></div>
+      <p class="note-ill" style="margin:6px 0 0">Population std with ε = 1e-6, as in your checkpoint.</p>
+    </div>
+    <div class="card">
+      <h3>Length bias</h3>
+      <p style="margin:0 0 6px;color:var(--muted)">A group with one short and one long wrong answer. Every token's loss is 1. How much weight does each token get in the loss? Ratio = long-token weight ÷ short-token weight.</p>
+      <div class="ctl"><label for="lS">short answer</label><input id="lS" type="range" min="20" max="400" step="10" value="100"><output id="lSo">100</output></div>
+      <div class="ctl"><label for="lL">long answer</label><input id="lL" type="range" min="50" max="1000" step="10" value="500"><output id="lLo">500</output></div>
+      <div class="ctl"><label for="lM">max_len</label><input id="lM" type="range" min="200" max="2048" step="8" value="1024"><output id="lMo">1024</output></div>
+      <div class="tablewrap"><table>
+        <thead class="lt"><tr><th>Mode</th><th>short token</th><th>long token</th><th>ratio</th></tr></thead>
+        <tbody id="lenRows" class="lt"></tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="v-quiz">
+  <span class="eyebrow">Day 5 · Quiz</span>
+  <h2>10 questions. Score 8+ to pass.</h2>
+  <p class="lead">Multiple choice plus four you compute yourself.</p>
+  <div class="qwrap card" id="quiz"></div>
+</section>
+
+<section class="view" id="v-checkpoint">
+  <span class="eyebrow">Day 5 · Checkpoint</span>
+  <h2>Write the math, keep the run going</h2>
+  <p class="lead">Four functions in plain Python, a filled-in variants table, and a run that's training. Send me your code and test output.</p>
+  <div class="grid2">
+    <div class="card">
+      <h3>Tasks</h3>
+      <ol>
+        <li>Confirm the v2 run is training (same config as Day 3, only the verifier changed).</li>
+        <li>Write <code>rl/grpo_math.py</code> with:
+          <ul>
+            <li><code>clipped_objective(ratio, adv, eps_low=0.2, eps_high=None)</code>: <code>eps_high</code> defaults to <code>eps_low</code></li>
+            <li><code>advantages(rewards, scale=True, eps=1e-6)</code>: population std; <code>scale=False</code> only subtracts the mean</li>
+            <li><code>aggregate(token_losses, mode, max_len=None)</code>: modes <code>"grpo"</code>, <code>"dapo"</code>, <code>"dr_grpo"</code>; raise <code>ValueError</code> for an unknown mode or a missing <code>max_len</code></li>
+            <li><code>dynamic_filter(groups)</code>: returns <code>(kept, n_dropped)</code>; drops empty groups and groups whose rewards are all equal</li>
+          </ul>
+        </li>
+        <li>Pass the 24 tests on the right.</li>
+        <li>Fill in <code>notes/grpo_variants.md</code>, including your TRL version's defaults.</li>
+      </ol>
+      <h3 style="margin-top:14px">Your checklist</h3>
+      <div class="checks">
+        <label><input type="checkbox" id="c1"> v2 run is training</label>
+        <label><input type="checkbox" id="c2"> 24 tests pass</label>
+        <label><input type="checkbox" id="c3"> grpo_variants.md filled in</label>
+        <label><input type="checkbox" id="c4"> Code and test output sent to Claude</label>
+      </div>
+    </div>
+    <div>
+      <p style="margin-top:0"><b>Tests</b>: save as <code>rl/test_grpo_math.py</code>, run <code>pytest</code>.</p>
+      <div class="codebox"><button class="btn" data-copy="tests">Copy</button><pre class="code" id="tests" style="max-height:640px"></pre></div>
+      <p class="note-ill">Checked against a reference solution: all 24 pass. Versions that use the sample std, always clip-higher, divide DAPO's sum by the number of answers, keep groups that merely have a nonzero sum, or ignore <code>scale</code> each fail at least one.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="site-foot"><div class="in"><span>RLE Lab · Kanishk Singh Parihar · Day 5 of 7</span><a href="../../index.html">Back to the roadmap</a></div></footer>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const store = { get: (k, d) => window.RLE.store.get("d5-" + k, d), set: (k, v) => window.RLE.store.set("d5-" + k, v) };
+const CSS = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+const VIEWS = ["lecture", "notes", "playground", "quiz", "checkpoint"];
+let done = store.get("done", {});
+function mark(v) { if (!done[v]) { done[v] = true; store.set("done", done); paintProg(); } }
+function paintProg() { const n = VIEWS.filter(v => done[v]).length; $("#progTxt").textContent = `${n} of 5 done`; $("#ring").style.setProperty("--p", n * 20); $("#ringPct").textContent = n * 20 + "%"; $$(".tab").forEach(t => t.classList.toggle("done", !!done[t.dataset.v])); }
+function route() {
+  const h = location.hash.slice(1), v = VIEWS.includes(h) ? h : "lecture";
+  $$(".view").forEach(s => s.classList.toggle("on", s.id === "v-" + v));
+  $$(".tab").forEach(t => { if (t.dataset.v === v) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current"); });
+  if (v === "notes") setTimeout(() => mark("notes"), 20000);
+  window.scrollTo({ top: 0 });
+}
+addEventListener("hashchange", route);
+
+const CH = [["Intro", 0.0], ["Launch the v2 run", 37.8], ["The ratio", 57.4], ["PPO's clip", 76.7], ["The KL leash", 100.5], ["Bias 1: std division", 127.3], ["Dr. GRPO's fix", 152.9], ["Bias 2: length", 173.9], ["Fixing the length bias", 200.6], ["DAPO's ablation", 218.8], ["Fix 1: clip-higher", 239.5], ["Fix 2: dynamic sampling", 259.6], ["Fixes 3 and 4", 278.2], ["TRL settings", 298.8], ["Recap", 327.1], ["Your checkpoint", 350.2]];
+const PARTS = [["day5_part1.mp4", 0], ["day5_part2.mp4", 173.9]], TOTAL = 378.7;
+const vid = $("#vid"); let part = 0;
+const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+function loadPart(i, at = 0, play = false) { if (part !== i) { part = i; vid.src = PARTS[i][0]; $("#partNo").textContent = i + 1; } const go = () => { vid.currentTime = at; if (play) vid.play().catch(() => {}); }; if (vid.readyState >= 1) go(); else vid.addEventListener("loadedmetadata", go, { once: true }); }
+function seekGlobal(t) { const i = t >= PARTS[1][1] ? 1 : 0; loadPart(i, t - PARTS[i][1], true); }
+$("#chapters").innerHTML = CH.map(([n, t]) => `<button class="chap" data-t="${t}"><time>${fmt(t)}</time><span>${n}</span></button>`).join("");
+$$(".chap").forEach(b => b.addEventListener("click", () => seekGlobal(+b.dataset.t)));
+vid.addEventListener("ended", () => { if (part === 0) loadPart(1, 0, true); else mark("lecture"); });
+vid.addEventListener("timeupdate", () => { const t = PARTS[part][1] + vid.currentTime; let cur = 0; CH.forEach(([, s], i) => { if (t >= s) cur = i; }); $$(".chap").forEach((b, i) => b.classList.toggle("now", i === cur)); if (t / TOTAL > 0.9) mark("lecture"); });
+
+/* ---- math (same as the checkpoint reference) ---- */
+function clipObj(r, A, el, eh) { const c = Math.min(Math.max(r, 1 - el), 1 + eh); return Math.min(r * A, c * A); }
+function advs(R, scale) { const n = R.length; if (!n) return []; const m = R.reduce((a, b) => a + b, 0) / n; const c = R.map(x => x - m); if (!scale) return c; const sd = Math.sqrt(c.reduce((a, b) => a + b * b, 0) / n); return c.map(x => x / (sd + 1e-6)); }
+
+/* flip cards */
+const FL = [["Ratio r", "concept", "π_new(token) / π_old(token). 1 means unchanged.", "--c1"],
+  ["Why clip?", "concept", "Past 1 ± ε in the direction A wants, the gradient is 0, so one noisy batch can't move the model too far.", "--c1"],
+  ["β = 0", "trend", "DAPO and recent TRL defaults drop the KL term. The verifier is then the only steer.", "--c4"],
+  ["Std division", "bias", "Makes a 0.1 format bonus look like a real win: both get +1.73.", "--c3"],
+  ["Per-answer averaging", "bias", "Token weight = 1 / own length. Long wrong answers become cheap.", "--c2"],
+  ["Clip-higher", "DAPO", "ε_high 0.28 > ε_low 0.2 lets rare tokens grow. Keeps entropy up.", "--c5"],
+  ["Dynamic sampling", "DAPO", "Drop groups where every reward is equal, resample until the batch is full.", "--good"],
+  ["One change per run", "habit", "Only the verifier differs between run v1 and v2.", "--good"]];
+$("#flips").innerHTML = FL.map(([f, k, b, c]) => `<button class="flip" style="--c: var(${c})" aria-label="${esc(f)}: flip to reveal"><div class="in"><div class="f">${esc(f)}<small>${k} · tap to flip</small></div><div class="bk">${esc(b)}</div></div></button>`).join("");
+$$(".flip").forEach(b => b.onclick = () => b.classList.toggle("on"));
+
+/* clip explorer */
+const cv = $("#clipCv"), g2 = cv.getContext("2d");
+function clipLab() {
+  const A = +$("#cA").value, r = +$("#cR").value, el = +$("#cL").value, eh = +$("#cH").value;
+  $("#cAo").textContent = A.toFixed(1); $("#cRo").textContent = r.toFixed(2); $("#cLo").textContent = el.toFixed(2); $("#cHo").textContent = eh.toFixed(2);
+  const W = cv.width, H = cv.height, pad = 44, X = v => pad + (W - 2 * pad) * v / 2, Y = v => H / 2 - v * (H / 2 - pad) / 2.6;
+  g2.clearRect(0, 0, W, H);
+  const ink = CSS("--ink"), mut = CSS("--muted"), line = CSS("--line"), bad = CSS("--bad"), acc = A >= 0 ? CSS("--good") : CSS("--c2");
+  g2.fillStyle = bad; g2.globalAlpha = .12;
+  if (A > 0) g2.fillRect(X(1 + eh), pad / 2, X(2) - X(1 + eh), H - pad); else if (A < 0) g2.fillRect(X(0), pad / 2, X(1 - el) - X(0), H - pad);
+  g2.globalAlpha = 1; g2.strokeStyle = line; g2.lineWidth = 1.5;
+  g2.beginPath(); g2.moveTo(pad, Y(0)); g2.lineTo(W - pad, Y(0)); g2.stroke();
+  [1 - el, 1, 1 + eh].forEach(v => { g2.setLineDash([4, 4]); g2.beginPath(); g2.moveTo(X(v), pad / 2); g2.lineTo(X(v), H - pad / 2); g2.stroke(); g2.setLineDash([]); });
+  g2.fillStyle = mut; g2.font = "20px IBM Plex Mono, monospace"; g2.textAlign = "center";
+  [0, 0.5, 1, 1.5, 2].forEach(v => g2.fillText(v.toFixed(1), X(v), H - 6));
+  g2.globalAlpha = .35; g2.strokeStyle = acc; g2.lineWidth = 2; g2.beginPath(); g2.moveTo(X(0), Y(0)); g2.lineTo(X(2), Y(2 * A)); g2.stroke(); g2.globalAlpha = 1;
+  g2.lineWidth = 4; g2.beginPath(); for (let i = 0; i <= 200; i++) { const rr = 2 * i / 200, v = clipObj(rr, A, el, eh); i ? g2.lineTo(X(rr), Y(v)) : g2.moveTo(X(rr), Y(v)); } g2.stroke();
+  const o = clipObj(r, A, el, eh); g2.fillStyle = ink; g2.beginPath(); g2.arc(X(r), Y(o), 8, 0, 7); g2.fill();
+  const clipped = (A > 0 && r > 1 + eh) || (A < 0 && r < 1 - el);
+  const fl = $("#cFlag"); fl.style.setProperty("--c", clipped ? "var(--bad)" : "var(--good)");
+  fl.innerHTML = `objective = <b>${o.toFixed(3)}</b> (unclipped r·A = ${(r * A).toFixed(3)}). ${A === 0 ? "A = 0: no signal at all." : clipped ? "Clipped: gradient is 0 for this token." : "Inside the band (or moving the wrong way): gradient flows."}`;
+}
+["#cA", "#cR", "#cL", "#cH"].forEach(s => $(s).addEventListener("input", () => { clipLab(); mark("playground"); }));
+document.addEventListener("themechange", clipLab); clipLab();
+
+/* std or no std */
+function advLab() {
+  const R = $("#advIn").value.split(/[,\s]+/).filter(Boolean).map(Number).filter(x => !isNaN(x)).slice(0, 8);
+  const a = advs(R, true), b = advs(R, false), mx = Math.max(1e-9, ...a.map(Math.abs), ...b.map(Math.abs));
+  const col = (lab, v) => `<div class="acol"><h4>${lab}</h4>${v.map((x, i) => `<div class="arow"><span class="rw">${R[i]}</span><div class="atrack"><i style="${x >= 0 ? "left:50%" : `right:50%`};width:${Math.abs(x) / mx * 50}%;background:var(${x >= 0 ? "--good" : "--bad"})"></i></div><b>${x >= 0 ? "+" : ""}${x.toFixed(3)}</b></div>`).join("")}</div>`;
+  $("#advOut").innerHTML = R.length ? col("GRPO (÷ std)", a) + col("Dr. GRPO (mean only)", b) : "<p>Type some numbers.</p>";
+}
+$("#advIn").addEventListener("input", () => { advLab(); mark("playground"); });
+$$("[data-rw]").forEach(b => b.onclick = () => { $("#advIn").value = b.dataset.rw; advLab(); mark("playground"); });
+advLab();
+
+/* length bias */
+function lenLab() {
+  const s = +$("#lS").value, l = +$("#lL").value, M = +$("#lM").value;
+  $("#lSo").textContent = s; $("#lLo").textContent = l; $("#lMo").textContent = M;
+  const rows = [["grpo", 1 / (2 * s), 1 / (2 * l)], ["dapo", 1 / (s + l), 1 / (s + l)], ["dr_grpo", 1 / (2 * M), 1 / (2 * M)]];
+  $("#lenRows").innerHTML = rows.map(([m, a, b]) => `<tr><td><code>${m}</code></td><td>1/${Math.round(1 / a)}</td><td>1/${Math.round(1 / b)}</td><td class="${Math.abs(b / a - 1) > 1e-9 ? "bad1" : "ok1"}">${(b / a).toFixed(2)}</td></tr>`).join("");
+}
+["#lS", "#lL", "#lM"].forEach(s => $(s).addEventListener("input", () => { lenLab(); mark("playground"); })); lenLab();
+
+/* quiz */
+const Q = [
+  { q: "What is the ratio r in the clipped objective?", o: ["reward / mean reward", "π_new(token) / π_old(token)", "the KL divergence", "the learning rate schedule"], a: 1, e: "It compares the policy being trained with the one that sampled the rollout." },
+  { num: true, q: "A = +1, r = 1.5, ε = 0.2 (symmetric). What is the clipped objective? (2 decimals)", ans: 1.2, tol: 0.005, e: "min(1.5 × 1, 1.2 × 1) = 1.20." },
+  { num: true, q: "A = −1, r = 0.5, ε = 0.2. What is the clipped objective? (2 decimals)", ans: -0.8, tol: 0.005, e: "min(0.5 × −1, 0.8 × −1) = min(−0.5, −0.8) = −0.80." },
+  { q: "When the ratio has moved past the band in the direction the advantage wants…", o: ["the gradient doubles", "the gradient for that token is 0", "the KL term turns on", "the token is removed from the batch"], a: 1, e: "That's the speed limit: no further push this step." },
+  { num: true, q: "GRPO advantages for rewards [0.1, 0, 0, 0] (population std): what is the first answer's advantage? (2 decimals)", ans: 1.73, tol: 0.01, e: "Same as [1, 0, 0, 0]: +1.73. Dividing by the std hides the size of the gap." },
+  { num: true, q: "Dr. GRPO (mean only) for rewards [0.1, 0, 0, 0]: the first answer's advantage? (3 decimals)", ans: 0.075, tol: 0.0005, e: "0.1 − 0.025 = 0.075." },
+  { q: "Plain GRPO averages loss per answer, then over answers. The effect on long wrong answers?", o: ["Penalised more per token", "Penalised less per token, so lengths drift up", "No effect", "They're dropped"], a: 1, e: "Token weight is 1 / own length." },
+  { q: "DAPO's clip-higher sets…", o: ["ε_high > ε_low, e.g. 0.28 and 0.2", "ε_high < ε_low", "no clipping at all", "β = 0.28"], a: 0, e: "A wider upper clip lets low-probability tokens grow, which keeps exploration alive." },
+  { q: "Dynamic sampling keeps which groups?", o: ["Only all-correct groups", "Only groups with mixed rewards", "Only the longest answers", "Every group"], a: 1, e: "Groups where every reward is equal give zero advantage, so they're dropped and replaced." },
+  { q: "For the v2 retrain, what should differ from the Day 3 run?", o: ["The verifier only", "Verifier and learning rate", "Model and verifier", "Everything, for a fresh start"], a: 0, e: "One change per run, so tomorrow's comparison is meaningful." }
+];
+let qi = 0, score = 0, answered = false, best = store.get("best", 0);
+function renderQ() {
+  const box = $("#quiz");
+  if (qi >= Q.length) {
+    const pass = score >= 8; best = Math.max(best, score); store.set("best", best); if (pass) { mark("quiz"); burst(); }
+    box.innerHTML = `<div class="score"><div class="big">${score}/${Q.length}</div><h3>${pass ? "Passed. Nice work." : "Not yet: 8 to pass."}</h3><p style="color:var(--muted)">Best so far: ${best}/${Q.length}.</p><div class="row" style="justify-content:center"><button class="btn ghost" id="retry">Retry quiz</button>${pass ? '<a class="btn good" href="#checkpoint">Go to checkpoint</a>' : ""}</div></div>`;
+    $("#retry").onclick = () => { qi = 0; score = 0; renderQ(); }; return;
+  }
+  const it = Q[qi]; answered = false;
+  if (!it.num) it.ord = it.o.map((_, i) => i).sort(() => Math.random() - .5);
+  box.innerHTML = `<div class="qhead"><span class="pill">Question ${qi + 1} of ${Q.length}</span><div class="qbar"><i style="width:${qi / Q.length * 100}%"></i></div><b style="font-variant-numeric:tabular-nums">${score} pts</b></div>
+    <h3 style="font-size:23px">${esc(it.q)}</h3>
+    ${it.num ? `<form class="numin" id="numf"><label for="numv" class="sr">Your answer</label><input id="numv" inputmode="decimal" placeholder="e.g. 0.50" autocomplete="off"><button class="btn">Check</button></form>` : `<div class="opts">${it.ord.map((oi, k) => `<button class="opt" data-i="${oi}">${String.fromCharCode(65 + k)}. ${esc(it.o[oi])}</button>`).join("")}</div>`}
+    <div id="fbox"></div>`;
+  if (it.num) { $("#numv").focus(); $("#numf").onsubmit = e => { e.preventDefault(); if (answered) return; const v = parseFloat($("#numv").value.replace(",", ".")); if (isNaN(v)) { $("#fbox").innerHTML = `<div class="fb" style="--c:var(--c4)">Type a number, like 0.50.</div>`; return; } finish(Math.abs(v - it.ans) <= it.tol); }; }
+  else $$(".opt").forEach(b => b.onclick = () => { if (answered) return; const i = +b.dataset.i; $$(".opt").forEach(x => { x.disabled = true; if (+x.dataset.i === it.a) x.classList.add("right"); }); if (i !== it.a) b.classList.add("wrong"); finish(i === it.a); });
+}
+function finish(ok) {
+  answered = true; const it = Q[qi]; if (ok) score++;
+  $("#fbox").innerHTML = `<div class="fb" style="--c:var(${ok ? "--good" : "--bad"})"><b>${ok ? "Correct." : "Not quite."}</b> ${it.num ? `Answer: ${it.ans.toFixed(2)}. ` : ""}${esc(it.e)}</div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" id="next">${qi + 1 < Q.length ? "Next question" : "See score"}</button></div>`;
+  if (ok && !reduce) burst(40); $("#next").focus(); $("#next").onclick = () => { qi++; renderQ(); };
+}
+renderQ();
+
+const cc = $("#confetti"), cx2 = cc.getContext("2d"); let bits = [];
+function burst(n = 160) { if (reduce) return; cc.width = innerWidth; cc.height = innerHeight; const cols = ["--c1", "--c2", "--c3", "--c4", "--good"].map(CSS); const start = !bits.length; for (let i = 0; i < n; i++) bits.push({ x: innerWidth / 2, y: innerHeight / 3, vx: (Math.random() - .5) * 16, vy: Math.random() * -14 - 4, c: cols[i % 5], life: 120 }); if (start) loopConf(); }
+function loopConf() { cx2.clearRect(0, 0, cc.width, cc.height); bits.forEach(b => { b.x += b.vx; b.y += b.vy; b.vy += .45; b.life--; cx2.fillStyle = b.c; cx2.fillRect(b.x, b.y, 8, 5); }); bits = bits.filter(b => b.life > 0); if (bits.length) requestAnimationFrame(loopConf); else cx2.clearRect(0, 0, cc.width, cc.height); }
+
+const TESTS = "import math, pytest\nfrom grpo_math import clipped_objective, advantages, aggregate, dynamic_filter\n\nA = lambda x, y, t=1e-6: abs(x - y) < t\n\n# clipped objective\ndef test_ratio_one_is_advantage():      assert A(clipped_objective(1.0, 2.0), 2.0)\ndef test_pos_adv_capped_above():        assert A(clipped_objective(1.5, 1.0), 1.2)\ndef test_pos_adv_below_band_unclipped():assert A(clipped_objective(0.5, 1.0), 0.5)\ndef test_neg_adv_capped_below():        assert A(clipped_objective(0.5, -1.0), -0.8)\ndef test_neg_adv_above_band_unclipped():assert A(clipped_objective(1.5, -1.0), -1.5)\ndef test_clip_higher_asymmetric():      assert A(clipped_objective(1.5, 1.0, 0.2, 0.28), 1.28)\ndef test_clip_higher_keeps_low():       assert A(clipped_objective(0.5, -1.0, 0.2, 0.28), -0.8)\ndef test_inside_band():                 assert A(clipped_objective(1.1, 3.0), 3.3)\n\n# advantages\ndef test_grpo_one_right():\n    a = advantages([1, 0, 0, 0]); assert A(a[0], 1.7320508, 1e-4) and A(a[1], -0.5773503, 1e-4)\ndef test_std_inflates_tiny_gap():\n    a = advantages([0.1, 0, 0, 0]); assert A(a[0], 1.7320508, 1e-3)\ndef test_dr_grpo_keeps_scale():\n    a = advantages([0.1, 0, 0, 0], scale=False); assert A(a[0], 0.075) and A(a[1], -0.025)\ndef test_zero_signal_group():           assert all(A(x, 0) for x in advantages([1, 1, 1, 1]))\ndef test_sums_to_zero():                assert A(sum(advantages([0.3, 1, 0, 0.5, 0.2])), 0)\ndef test_empty():                       assert advantages([]) == []\n\n# aggregation\nL = [[1.0] * 2, [3.0] * 6]   # short completion: loss 1 per token; long: 3 per token\ndef test_grpo_mode():                   assert A(aggregate(L, \"grpo\"), 2.0)\ndef test_dapo_mode():                   assert A(aggregate(L, \"dapo\"), 20 / 8)\ndef test_dr_grpo_mode():                assert A(aggregate(L, \"dr_grpo\", max_len=10), 20 / 20)\ndef test_dr_grpo_needs_max_len():\n    with pytest.raises(ValueError): aggregate(L, \"dr_grpo\")\ndef test_unknown_mode():\n    with pytest.raises(ValueError): aggregate(L, \"ppo\")\ndef test_length_bias_grpo():\n    # per-token weight in grpo depends on own length: long answer's tokens count less\n    short = aggregate([[1.0], [0.0] * 4], \"grpo\"); long_ = aggregate([[0.0], [1.0] + [0.0] * 3], \"grpo\")\n    assert short > long_\ndef test_no_length_bias_dapo():\n    short = aggregate([[1.0], [0.0] * 4], \"dapo\"); long_ = aggregate([[0.0], [1.0] + [0.0] * 3], \"dapo\")\n    assert A(short, long_)\n\n# dynamic sampling\ndef test_filter_drops_uniform():\n    kept, d = dynamic_filter([[1, 1, 1], [0, 0, 0], [1, 0, 0], [0.5, 0.5, 0.2]])\n    assert kept == [[1, 0, 0], [0.5, 0.5, 0.2]] and d == 2\ndef test_filter_keeps_all_mixed():\n    kept, d = dynamic_filter([[1, 0], [0, 1]]); assert d == 0 and len(kept) == 2\ndef test_filter_empty_groups():\n    kept, d = dynamic_filter([[], [2, 2]]); assert kept == [] and d == 2\n";
+function hl(src) { return src.split("\n").map(line => { const ci = line.indexOf("#"); let code = ci >= 0 ? line.slice(0, ci) : line, cm = ci >= 0 ? line.slice(ci) : ""; code = esc(code).replace(/\b(import|from|def|assert|and|is|None|return|for|in|with|lambda)\b/g, '<span class="kw">$1</span>').replace(/\b(clipped_objective|advantages|aggregate|dynamic_filter|test_\w+|abs|all|sum)\b/g, '<span class="fn">$1</span>'); return code + (cm ? `<span class="cm">${esc(cm)}</span>` : ""); }).join("\n"); }
+$("#tests").innerHTML = hl(TESTS);
+$$("[data-copy]").forEach(b => b.onclick = async () => { const t = b.dataset.copy === "tests" ? TESTS : $("#tpl").textContent; const lab = b.textContent; try { await navigator.clipboard.writeText(t); b.textContent = "Copied"; } catch (e) { b.textContent = "Select and copy"; } setTimeout(() => b.textContent = lab, 1800); });
+let ck = store.get("checks", {});
+["c1", "c2", "c3", "c4"].forEach(id => { const c = $("#" + id); c.checked = !!ck[id]; c.onchange = () => { ck[id] = c.checked; store.set("checks", ck); if (ck.c1 && ck.c2 && ck.c3) mark("checkpoint"); }; });
+
+paintProg(); route();
+});
+</script>
+</body>
+</html>

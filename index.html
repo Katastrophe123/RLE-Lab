@@ -69,6 +69,7 @@
       <a href="days/day2/index.html">Day 2</a>
       <a href="days/day3/index.html">Day 3</a>
       <a href="days/day4/index.html">Day 4</a>
+      <a href="days/day5/index.html">Day 5</a>
     </nav>
     <button class="theme-btn" data-theme-btn type="button">Theme</button>
   </div>
@@ -140,7 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
     { d: 2, date: "Fri Nov 13", h: 2, t: "Verifiers 101", out: "verifier.py with 20 passing tests", href: "days/day2/index.html" },
     { d: 3, date: "Sat Nov 14", h: 5, t: "Baseline eval and first GRPO run", out: "Before/after accuracy and training logs", href: "days/day3/index.html" },
     { d: 4, date: "Sun Nov 15", h: 5, t: "Break your own verifier", out: "Adversarial suite, verifier v2, measured precision", href: "days/day4/index.html" },
-    { d: 5, date: "Mon Nov 16", h: 2, t: "Retrain with v2; what GRPO gets wrong", out: "v2 run launched, notes on Dr. GRPO and DAPO" },
+    { d: 5, date: "Mon Nov 16", h: 2, href: "days/day5/index.html", t: "Retrain with v2; what GRPO gets wrong", out: "v2 run launched, notes on Dr. GRPO and DAPO" },
     { d: 6, date: "Tue Nov 17", h: 2, t: "Compare runs; production RL infrastructure", out: "v1 vs v2 results table, architecture notes" },
     { d: 7, date: "Wed Nov 18", h: 2, t: "Publish and plan week 2", out: "README write-up, public post, week 2 picks" }
   ];
@@ -156,7 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const n = dayDone(x.d); steps += n; const full = n === 5; if (full) complete++;
     const open = !!x.href;
     const cls = full ? "done" : open ? "open" : "locked";
-    const status = full ? '<span class="pill done">Complete</span>' : open ? `<span class="pill on">${n ? "In progress" : "Available"}</span>` : `<span class="pill">${x.d === 5 ? "Coming next" : "Coming soon"}</span>`;
+    const status = full ? '<span class="pill done">Complete</span>' : open ? `<span class="pill on">${n ? "In progress" : "Available"}</span>` : `<span class="pill">${x.d === 6 ? "Coming next" : "Coming soon"}</span>`;
     const right = open
       ? `<div class="right">${status}<div class="bar" aria-label="${n} of 5 steps"><i style="width:${n * 20}%"></i></div><a class="btn" href="${x.href}">${n ? "Continue" : "Open"} Day ${x.d}</a></div>`
       : `<div class="right">${status}</div>`;
