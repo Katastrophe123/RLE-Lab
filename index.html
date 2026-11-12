@@ -4,11 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RLE Lab</title>
-<meta name="description" content="A one-week, hands-on path to building RL training loops and verifiers you can trust.">
+<meta name="author" content="Kanishk Singh Parihar">
+<meta name="description" content="Kanishk Singh Parihar's one-week, hands-on path to building RL training loops and verifiers you can trust.">
 <script>(function(){var t=null;try{t=localStorage.getItem("rle-theme")}catch(e){}if(!t){try{t=JSON.parse(window.name||"{}")["rle-theme"]}catch(e){}}if(t&&t!=="system")document.documentElement.setAttribute("data-mode",t)})()</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Caveat:wght@600&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/site.css">
 <script src="assets/site.js" defer></script>
 <style>
@@ -21,16 +22,6 @@
 .stat b { display: block; font-family: var(--display); font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
 .stat span { color: var(--muted); font-size: 13px; }
 
-.side { display: grid; gap: 0; }
-.avatar { position: relative; width: min(280px, 72%); aspect-ratio: 1; margin: 0 auto -34px; z-index: 1; }
-.avatar .disc { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 50% 38%, var(--surface) 0%, var(--bg-2) 72%); border: 1px solid var(--line); box-shadow: var(--shadow); overflow: hidden; }
-.avatar .disc img { position: absolute; left: -22%; top: 6%; width: 144%; height: auto; animation: breathe 6s ease-in-out infinite; transform-origin: 50% 100%; }
-.avatar .orbit { position: absolute; inset: -12px; border-radius: 50%; border: 1.5px dashed color-mix(in srgb, var(--accent) 55%, transparent); animation: spin 26s linear infinite; }
-.avatar .orbit::after { content: ""; position: absolute; top: 50%; right: -6px; width: 11px; height: 11px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 22%, transparent); }
-.sig { position: absolute; right: -34px; bottom: 6px; transform: rotate(-7deg); font-family: "Caveat", "Segoe Script", cursive; font-size: 30px; font-weight: 600; color: var(--eyebrow); background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 0 12px; box-shadow: var(--shadow); white-space: nowrap; }
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes breathe { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-4px) scale(1.012); } }
-.side .summary { padding-top: 48px; }
 .section-head { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; margin: 40px 0 18px; }
 
 /* roadmap */
@@ -83,7 +74,7 @@
 <main>
   <section class="hero">
     <div>
-      <span class="eyebrow">RL Engineer · Week 1</span>
+      <span class="eyebrow">Kanishk Singh Parihar · RL Engineer · Week 1</span>
       <h1>Build the loop. <em>Trust the verifier.</em></h1>
       <p class="lead">Seven days, about 20 hours, one project: train a small model with GRPO against a verifier you write, break that verifier on purpose, harden it, and publish the results.</p>
       <div class="row" style="margin-top:20px">
@@ -91,13 +82,7 @@
         <a class="btn ghost" href="#roadmap">See the roadmap</a>
       </div>
     </div>
-    <div class="side">
-      <figure class="avatar" style="margin-top:0">
-        <span class="orbit" aria-hidden="true"></span>
-        <span class="disc"><img src="assets/avatar.png" alt="Illustrated portrait of Katastrophe123 in a navy suit and red tie" width="720" height="720"></span>
-        <figcaption class="sig">Katastrophe123</figcaption>
-      </figure>
-      <div class="summary card">
+    <div class="summary card">
       <div class="row" style="justify-content:space-between"><b>Your progress</b><span class="pill" id="todayPill">Day 1</span></div>
       <div class="stats">
         <div class="stat"><b id="sDays">0/7</b><span>days complete</span></div>
@@ -106,7 +91,6 @@
       </div>
       <div class="bar" aria-hidden="true"><i id="weekBar" style="width:0%"></i></div>
       <p style="margin:0;color:var(--muted);font-size:14px">Saved in this browser only.</p>
-    </div>
     </div>
   </section>
 
@@ -142,7 +126,7 @@
   </div>
 </main>
 
-<footer class="site-foot"><div class="in"><span>RLE Lab · a personal study track for RL engineering</span><span>Progress is stored in your browser.</span></div></footer>
+<footer class="site-foot"><div class="in"><span>RLE Lab · a study track by Kanishk Singh Parihar</span><span>Progress is stored in your browser.</span></div></footer>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
