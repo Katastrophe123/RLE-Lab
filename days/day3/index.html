@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 3 · First GRPO Run · RLE Lab</title>
+<meta name="author" content="Kanishk Singh Parihar">
+<script>(function(){var t=null;try{t=localStorage.getItem("rle-theme")}catch(e){}if(!t){try{t=JSON.parse(window.name||"{}")["rle-theme"]}catch(e){}}if(t&&t!=="system")document.documentElement.setAttribute("data-mode",t)})()</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="stylesheet" href="../../assets/day.css">
+<script src="../../assets/site.js" defer></script>
+<style>
+.steps3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 12px 0; }
+@media (max-width: 700px) { .steps3 { grid-template-columns: 1fr; } }
+.step3 { background: var(--surface-2); border: 1px solid var(--line); border-top: 4px solid var(--c); border-radius: 14px; padding: 14px; }
+.step3 b { font-family: var(--display); font-size: 19px; display: block; }
+.step3 span { color: var(--muted); font-size: 15px; }
+.split { display: flex; height: 34px; border-radius: 10px; overflow: hidden; margin: 10px 0 4px; font-size: 13px; font-weight: 700; color: var(--on-color); }
+.split i { display: grid; place-items: center; font-style: normal; }
+.pgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; }
+.ctl { display: grid; grid-template-columns: 150px 1fr 64px; gap: 10px; align-items: center; margin: 8px 0; }
+.ctl output { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+.diag { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; }
+.dcard { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+.dcard canvas { width: 100%; height: 120px; display: block; }
+.dcard select { width: 100%; margin-top: 8px; }
+.dcard .res { font-size: 14px; margin-top: 6px; min-height: 2.6em; }
+.note-ill { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<canvas id="confetti" aria-hidden="true"></canvas>
+<header class="site-header">
+  <div class="site-bar">
+    <a class="brand" href="../../index.html"><span class="mark" aria-hidden="true"></span>RLE Lab</a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="../../index.html">Roadmap</a>
+      <a href="../day1/index.html">Day 1</a>
+      <a href="../day2/index.html">Day 2</a>
+      <a href="index.html" aria-current="page">Day 3</a>
+    </nav>
+    <button class="theme-btn" data-theme-btn type="button">Theme</button>
+  </div>
+  <div class="daybar">
+    <nav class="tabs" aria-label="Day 3 sections">
+      <a class="tab" href="#lecture" data-v="lecture" style="--c: var(--c1)"><span class="dot"></span>1 · Lecture<span class="tick">✓</span></a>
+      <a class="tab" href="#notes" data-v="notes" style="--c: var(--c2)"><span class="dot"></span>2 · Notes<span class="tick">✓</span></a>
+      <a class="tab" href="#playground" data-v="playground" style="--c: var(--c3)"><span class="dot"></span>3 · Playground<span class="tick">✓</span></a>
+      <a class="tab" href="#quiz" data-v="quiz" style="--c: var(--c4)"><span class="dot"></span>4 · Quiz<span class="tick">✓</span></a>
+      <a class="tab" href="#checkpoint" data-v="checkpoint" style="--c: var(--good)"><span class="dot"></span>5 · Checkpoint<span class="tick">✓</span></a>
+    </nav>
+    <div class="prog"><span id="progTxt">0 of 5 done</span><div class="ring" id="ring"><span id="ringPct">0%</span></div></div>
+  </div>
+</header>
+
+<main>
+<!-- LECTURE -->
+<section class="view" id="v-lecture">
+  <span class="eyebrow">Day 3 · 6 min lecture · 5 hours today</span>
+  <h2>Baseline eval and your first GRPO run</h2>
+  <p class="lead">Measure a small model, train it with GRPO against your Day 2 verifier, and measure it again. Watch the lecture first; the run itself happens on a free GPU.</p>
+  <div class="lecture">
+    <div>
+      <video id="vid" controls preload="metadata" src="day3_part1.mp4#t=0.6"></video>
+      <p style="color:var(--muted);font-size:14px;margin:8px 0 0">Part <span id="partNo">1</span> of 2 · part 2 starts automatically.</p>
+    </div>
+    <div class="card"><h3 style="margin-bottom:10px">Chapters</h3><div class="chapters" id="chapters"></div></div>
+  </div>
+</section>
+
+<!-- NOTES -->
+<section class="view" id="v-notes">
+  <span class="eyebrow">Day 3 · Notes</span>
+  <h2>Run the loop for real</h2>
+  <p class="lead">Today's result is a table: baseline vs trained, on the same problems, with the same prompt. Everything below serves that table.</p>
+
+  <div class="card note" style="--c: var(--c1)">
+    <div class="head"><div class="num">1</div><h3>Experiment design: change one thing</h3></div>
+    <div class="steps3">
+      <div class="step3" style="--c: var(--c2)"><b>1 · Baseline eval</b><span>200 GSM8K test problems, greedy decoding, your verifier.</span></div>
+      <div class="step3" style="--c: var(--c1)"><b>2 · GRPO training</b><span>GSM8K train split, ~250 steps, LoRA.</span></div>
+      <div class="step3" style="--c: var(--good)"><b>3 · Eval again</b><span>The exact same 200 problems, prompt and decoding.</span></div>
+    </div>
+    <div class="split" aria-label="GSM8K split: 7,473 train, 1,319 test"><i style="flex:7473;background:var(--c2)">train · 7,473</i><i style="flex:1319;background:var(--c3)">test · 1,319</i></div>
+    <p class="note-ill" style="margin:0">Train on the train split only. Evaluating on problems you trained on measures memory, not skill.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--c3)">
+    <div class="head"><div class="num">2</div><h3>Setup</h3></div>
+    <ul class="tight">
+      <li><b>GPU:</b> free Colab T4 (16 GB). Kaggle's free GPUs work too, and can run a notebook in the background with "Save Version → Save &amp; Run All".</li>
+      <li><b>Model:</b> <code>Qwen2.5-0.5B-Instruct</code>, small enough to train for free.</li>
+      <li><b>LoRA:</b> the base weights stay frozen; you train small adapter matrices added to some layers. Far less memory, and the adapter is a few MB to save.</li>
+      <li><b>Libraries:</b> TRL's <code>GRPOTrainer</code>, or Unsloth's free GRPO Colab notebook as a template with your reward functions plugged in.</li>
+    </ul>
+  </div>
+
+  <div class="card note" style="--c: var(--c2)">
+    <div class="head"><div class="num">3</div><h3>Freeze one system prompt</h3></div>
+<pre class="code">SYSTEM_PROMPT = ("Solve the problem step by step. "
+                 "Then give only the final number inside &lt;answer&gt;&lt;/answer&gt;.")</pre>
+    <p>Use this exact text for training and for both evaluations. Changing the prompt between runs is the easiest way to fool yourself.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--c4)">
+    <div class="head"><div class="num">4</div><h3>Baseline numbers: accuracy, format, pass@k, mixed groups</h3></div>
+    <ul class="tight">
+      <li><b>Accuracy</b>: share of the 200 greedy answers your verifier scores 1.0.</li>
+      <li><b>Format compliance</b>: share with exactly one tag holding a number.</li>
+      <li><b>pass@k</b>: on 50 problems, sample n = 8 at temperature 1.0. With c correct out of n, the unbiased estimate is below. It tells you what sampling can reach.</li>
+      <li><b>Mixed share</b>: share of those 50 groups with both right and wrong answers. Only mixed groups give GRPO signal (Day 1).</li>
+    </ul>
+<pre class="code" style="margin-top:10px">pass@k = 1 − C(n − c, k) / C(n, k)        <span class="cm"># = 1.0 when n − c &lt; k</span></pre>
+  </div>
+
+  <div class="card note" style="--c: var(--c1)">
+    <div class="head"><div class="num">5</div><h3>Training config (starting point)</h3></div>
+<pre class="code">config = GRPOConfig(
+    output_dir="grpo-qwen05b",
+    num_generations=8,            <span class="cm"># 4 if you run out of memory</span>
+    max_completion_length=256,
+    max_steps=250,
+    logging_steps=5,
+    save_steps=50,                <span class="cm"># and push each checkpoint to the Hub</span>
+)                                 <span class="cm"># keep the default learning rate for run 1</span>
+trainer = GRPOTrainer(model=model, args=config, train_dataset=train,
+                      reward_funcs=[correctness_reward, format_reward],
+                      peft_config=lora_config)
+trainer.train()</pre>
+    <p class="note-ill">Parameter names shift between TRL versions; check the <code>GRPOConfig</code> docs for the version you install. The batch is built from prompts × G completions, so batch settings must be compatible with <code>num_generations</code>.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--c4)">
+    <div class="head"><div class="num">6</div><h3>Five curves to watch</h3></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Curve</th><th>Healthy (small model)</th><th>Warning sign</th><th>First thing to try</th></tr></thead>
+      <tbody>
+        <tr><td><b>Correctness reward</b></td><td>Slow, small rise</td><td>Flat while total reward rises</td><td>Read rollouts: is a bonus being farmed?</td></tr>
+        <tr><td><b>Format reward</b></td><td>Climbs fast, then plateaus</td><td>Dominates total reward</td><td>Lower its weight</td></tr>
+        <tr><td><b>Group reward std</b></td><td>Stays above 0</td><td>Falls to ~0</td><td>Prompts too easy/hard; check mixed share</td></tr>
+        <tr><td><b>KL</b></td><td>Gentle rise</td><td>Shoots up</td><td>Lower learning rate; check for hacks</td></tr>
+        <tr><td><b>Completion length</b></td><td>Within the limit</td><td>Pinned at the cap</td><td>Raise the cap or check truncation</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note-ill">Metric names in the logs differ by TRL version (for example <code>reward_std</code>, <code>kl</code>, per-function reward columns). Log each reward function separately.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--good)">
+    <div class="head"><div class="num">7</div><h3>After training: the table, then the reading</h3></div>
+    <p>Re-run the exact baseline. Fill one table: accuracy, format rate, average length, before vs after. Then read 20 late-training completions yourself. Expect format to jump and accuracy to move a few points on a 0.5B model: a normal first result. If total reward rose but accuracy didn't, you've found your first reward-hacking lead, which is where Day 4 starts.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--bad)">
+    <div class="head"><div class="num">8</div><h3>When things break</h3></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Symptom</th><th>Do this first</th></tr></thead>
+      <tbody>
+        <tr><td>CUDA out of memory</td><td>Lower <code>num_generations</code>, then <code>max_completion_length</code></td></tr>
+        <tr><td>Each step is very slow</td><td>Shorter completions, then fewer steps</td></tr>
+        <tr><td>Session disconnected</td><td>Resume from the last Hub checkpoint</td></tr>
+        <tr><td>Correctness never moves</td><td>Run your verifier on 20 real rollouts by hand before blaming the algorithm</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="card note" style="--c: var(--c3)">
+    <div class="head"><div class="num">9</div><h3>Flip cards</h3></div>
+    <div class="flips" id="flips"></div>
+  </div>
+</section>
+
+<!-- PLAYGROUND -->
+<section class="view" id="v-playground">
+  <span class="eyebrow">Day 3 · Playground</span>
+  <h2>Plan the run, read the curves</h2>
+  <p class="lead">Three tools: how pass@k grows with k, what a training step costs in rollouts, and a curve-diagnosis game.</p>
+  <div class="pgrid">
+    <div class="card">
+      <h3>pass@k calculator</h3>
+      <div class="ctl"><label for="pkN">samples n</label><input id="pkN" type="range" min="2" max="32" value="8"><output id="pkNo">8</output></div>
+      <div class="ctl"><label for="pkC">correct c</label><input id="pkC" type="range" min="0" max="8" value="2"><output id="pkCo">2</output></div>
+      <canvas class="chart" id="pkChart" style="height:240px" aria-label="pass@k for each k"></canvas>
+      <p id="pkMsg" style="margin:6px 0 0;font-size:15px"></p>
+    </div>
+    <div class="card">
+      <h3>Rollout budget per run</h3>
+      <div class="ctl"><label for="bP">prompts / step</label><input id="bP" type="range" min="1" max="16" value="4"><output id="bPo">4</output></div>
+      <div class="ctl"><label for="bG">G (generations)</label><input id="bG" type="range" min="2" max="16" step="2" value="8"><output id="bGo">8</output></div>
+      <div class="ctl"><label for="bL">max tokens</label><input id="bL" type="range" min="64" max="1024" step="64" value="256"><output id="bLo">256</output></div>
+      <div class="ctl"><label for="bS">steps</label><input id="bS" type="range" min="50" max="1000" step="50" value="250"><output id="bSo">250</output></div>
+      <div class="ctl"><label for="bA">baseline accuracy</label><input id="bA" type="range" min="0" max="1" step="0.01" value="0.35"><output id="bAo">0.35</output></div>
+      <div class="stats">
+        <div class="stat">completions / step<b id="bC1">–</b></div>
+        <div class="stat">max tokens / run<b id="bC2">–</b></div>
+        <div class="stat">useful prompts / step<b id="bC3">–</b></div>
+      </div>
+      <p class="note-ill" style="margin:0">"Useful" assumes every prompt has the same solve rate as your baseline accuracy: expected mixed groups = prompts × (1 − p<sup>G</sup> − (1 − p)<sup>G</sup>). Real prompts vary, so measure your mixed share.</p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:18px">
+    <h3>Diagnose the curve</h3>
+    <p class="note-ill" style="margin-top:4px">Illustrative curves. Pick what each one most likely means.</p>
+    <div class="diag" id="diag"></div>
+  </div>
+</section>
+
+<!-- QUIZ -->
+<section class="view" id="v-quiz">
+  <span class="eyebrow">Day 3 · Quiz</span>
+  <h2>10 questions. Score 8+ to pass.</h2>
+  <p class="lead">Multiple choice plus three you compute yourself.</p>
+  <div class="qwrap card" id="quiz"></div>
+</section>
+
+<!-- CHECKPOINT -->
+<section class="view" id="v-checkpoint">
+  <span class="eyebrow">Day 3 · Checkpoint</span>
+  <h2>Part A: eval code. Part B: the real run.</h2>
+  <p class="lead">Part A takes about 30 minutes and needs no GPU. Part B is most of today's 5 hours. Send me your code, your test output and your results table.</p>
+  <div class="grid2">
+    <div class="card">
+      <h3>Part A · <code>eval/eval_utils.py</code></h3>
+      <ol>
+        <li><code>SYSTEM_PROMPT</code> and <code>build_messages(question)</code>: system + user messages.</li>
+        <li><code>summarize(correct, fmt)</code>: <code>{"n", "accuracy", "format_rate"}</code> from your two reward lists.</li>
+        <li><code>pass_at_k(n, c, k)</code>: the unbiased estimator.</li>
+        <li><code>mixed_share(groups)</code>: share of groups whose rewards are not all equal.</li>
+      </ol>
+      <h3 style="margin-top:14px">Part B · the run</h3>
+      <ol>
+        <li>Baseline: 200 test problems, greedy. Save <code>eval/baseline.jsonl</code>.</li>
+        <li>pass@8 and mixed share on 50 problems.</li>
+        <li>GRPO, ~250 steps, Hub checkpoint every 50.</li>
+        <li>Same eval on the trained model. Fill the table below in <code>LOG.md</code>.</li>
+      </ol>
+<pre class="code" id="tbl">| metric            | baseline | after GRPO |
+|-------------------|----------|------------|
+| accuracy          |          |            |
+| format compliance |          |            |
+| avg length        |          |            |
+| pass@8 (50 probs) |          |            |
+| mixed share       |          |            |</pre>
+      <div class="row" style="margin-top:8px"><button class="btn ghost" data-copy="tbl">Copy table</button></div>
+      <h3 style="margin-top:14px">Your checklist</h3>
+      <div class="checks">
+        <label><input type="checkbox" id="c1"> Part A: all 12 tests pass</label>
+        <label><input type="checkbox" id="c2"> Baseline numbers recorded</label>
+        <label><input type="checkbox" id="c3"> Training run finished, adapter on the Hub</label>
+        <label><input type="checkbox" id="c4"> Table filled and sent to Claude</label>
+      </div>
+    </div>
+    <div>
+      <p style="margin-top:0"><b>Part A tests</b>: save as <code>eval/test_eval_utils.py</code>, run <code>pytest</code>.</p>
+      <div class="codebox"><button class="btn" data-copy="tests">Copy</button><pre class="code" id="tests" style="max-height:640px"></pre></div>
+      <p class="note-ill">Checked against a reference solution: all 12 pass. A pass@k that uses 1 − (1 − c/n)<sup>k</sup>, or a mixed share that only checks for a correct answer, fails.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="site-foot"><div class="in"><span>RLE Lab · Kanishk Singh Parihar · Day 3 of 7</span><a href="../../index.html">Back to the roadmap</a></div></footer>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const store = { get: (k, d) => window.RLE.store.get("d3-" + k, d), set: (k, v) => window.RLE.store.set("d3-" + k, v) };
+const CSS = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+/* progress + routing */
+const VIEWS = ["lecture", "notes", "playground", "quiz", "checkpoint"];
+let done = store.get("done", {});
+function mark(v) { if (!done[v]) { done[v] = true; store.set("done", done); paintProg(); } }
+function paintProg() { const n = VIEWS.filter(v => done[v]).length; $("#progTxt").textContent = `${n} of 5 done`; $("#ring").style.setProperty("--p", n * 20); $("#ringPct").textContent = n * 20 + "%"; $$(".tab").forEach(t => t.classList.toggle("done", !!done[t.dataset.v])); }
+function route() {
+  const h = location.hash.slice(1), v = VIEWS.includes(h) ? h : "lecture";
+  $$(".view").forEach(s => s.classList.toggle("on", s.id === "v-" + v));
+  $$(".tab").forEach(t => { if (t.dataset.v === v) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current"); });
+  if (v === "notes") setTimeout(() => mark("notes"), 20000);
+  if (v === "playground") { drawPk(); drawDiag(); }
+  window.scrollTo({ top: 0 });
+}
+addEventListener("hashchange", route);
+
+/* lecture */
+const CH = [["Intro", 0.0], ["Recap of Day 2", 37.2], ["Experiment design", 54.2], ["Setup: GPU, model, LoRA", 79.6], ["Freeze the system prompt", 104.4], ["Baseline eval", 124.3], ["pass@8 and mixed groups", 146.5], ["Training config", 169.0], ["Hub checkpoints", 194.1], ["Five curves to watch", 208.1], ["What healthy looks like", 227.7], ["What trouble looks like", 247.6], ["Evaluate after training", 271.0], ["The reward vs accuracy gap", 291.0], ["When things break", 313.3], ["Recap", 335.5], ["Your checkpoint", 355.8]];
+const PARTS = [["day3_part1.mp4", 0], ["day3_part2.mp4", 169.0]], TOTAL = 381.4;
+const vid = $("#vid"); let part = 0;
+const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+function loadPart(i, at = 0, play = false) { if (part !== i) { part = i; vid.src = PARTS[i][0]; $("#partNo").textContent = i + 1; } const go = () => { vid.currentTime = at; if (play) vid.play().catch(() => {}); }; if (vid.readyState >= 1) go(); else vid.addEventListener("loadedmetadata", go, { once: true }); }
+function seekGlobal(t) { const i = t >= PARTS[1][1] ? 1 : 0; loadPart(i, t - PARTS[i][1], true); }
+$("#chapters").innerHTML = CH.map(([n, t]) => `<button class="chap" data-t="${t}"><time>${fmt(t)}</time><span>${n}</span></button>`).join("");
+$$(".chap").forEach(b => b.addEventListener("click", () => seekGlobal(+b.dataset.t)));
+vid.addEventListener("ended", () => { if (part === 0) loadPart(1, 0, true); else mark("lecture"); });
+vid.addEventListener("timeupdate", () => { const t = PARTS[part][1] + vid.currentTime; let cur = 0; CH.forEach(([, s], i) => { if (t >= s) cur = i; }); $$(".chap").forEach((b, i) => b.classList.toggle("now", i === cur)); if (t / TOTAL > 0.9) mark("lecture"); });
+
+/* maths */
+function comb(n, k) { if (k < 0 || k > n) return 0; k = Math.min(k, n - k); let r = 1; for (let i = 1; i <= k; i++) r = r * (n - k + i) / i; return r; }
+function passAtK(n, c, k) { if (n - c < k) return 1; return 1 - comb(n - c, k) / comb(n, k); }
+
+/* flip cards */
+const FL = [["One change per run", "rule", "Same 200 problems, same prompt, same decoding. Otherwise you can't tell what caused the difference.", "--c1"],
+  ["Why LoRA?", "concept", "Frozen base, small trainable adapters: fits a free 16 GB GPU and saves a few MB.", "--c2"],
+  ["pass@k", "formula", "1 − C(n−c, k) / C(n, k). What sampling can reach, not what greedy gives.", "--c3"],
+  ["Mixed share", "concept", "Share of groups with both right and wrong answers: the only ones with signal.", "--c4"],
+  ["Reward up, accuracy flat", "warning", "A bonus is being farmed or the verifier has a hole. Read rollouts.", "--bad"],
+  ["Std → 0", "warning", "Every group scores the same. No signal; prompts too easy or too hard.", "--bad"],
+  ["Out of memory", "fix", "Lower num_generations first, then max_completion_length.", "--c5"],
+  ["Before blaming GRPO", "habit", "Check your verifier on 20 real rollouts by hand.", "--good"]];
+$("#flips").innerHTML = FL.map(([f, k, b, c]) => `<button class="flip" style="--c: var(${c})" aria-label="${f}: flip to reveal"><div class="in"><div class="f">${f}<small>${k} · tap to flip</small></div><div class="bk">${b}</div></div></button>`).join("");
+$$(".flip").forEach(b => b.onclick = () => b.classList.toggle("on"));
+
+/* playground: pass@k */
+function drawPk() {
+  const n = +$("#pkN").value; $("#pkC").max = n; const c = Math.min(+$("#pkC").value, n); $("#pkC").value = c;
+  $("#pkNo").textContent = n; $("#pkCo").textContent = c;
+  const cv = $("#pkChart"), dpr = devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight; if (!W) return;
+  cv.width = W * dpr; cv.height = H * dpr; const x = cv.getContext("2d"); x.scale(dpr, dpr);
+  const L = 36, B = H - 24, T = 10, R = W - 6, bw = (R - L) / n;
+  x.font = "12px IBM Plex Sans, sans-serif"; x.fillStyle = CSS("--muted");
+  [0, .5, 1].forEach(v => { const y = B - v * (B - T); x.strokeStyle = CSS("--line"); x.beginPath(); x.moveTo(L, y); x.lineTo(R, y); x.stroke(); x.fillText(v * 100 + "%", 2, y + 4); });
+  for (let k = 1; k <= n; k++) {
+    const v = passAtK(n, c, k), y = B - v * (B - T), xx = L + (k - 1) * bw;
+    x.fillStyle = k === n ? CSS("--accent") : CSS("--c2"); x.fillRect(xx + bw * .15, y, bw * .7, B - y);
+    if (n <= 16 || k % 2 === 1) { x.fillStyle = CSS("--muted"); x.textAlign = "center"; x.fillText(k, xx + bw / 2, H - 8); x.textAlign = "left"; }
+  }
+  $("#pkMsg").innerHTML = `pass@1 = <b>${(passAtK(n, c, 1) * 100).toFixed(1)}%</b> (= c/n) · pass@${n} = <b>${(passAtK(n, c, n) * 100).toFixed(0)}%</b>. ${c === 0 ? "No correct sample: no learning signal on this problem." : c === n ? "Every sample right: also no signal for GRPO." : "Mixed group: this problem gives GRPO signal."}`;
+}
+["#pkN", "#pkC"].forEach(s => $(s).addEventListener("input", () => { drawPk(); mark("playground"); }));
+
+/* playground: budget */
+function budget() {
+  const P = +$("#bP").value, G = +$("#bG").value, L = +$("#bL").value, S = +$("#bS").value, p = +$("#bA").value;
+  [["bP", P], ["bG", G], ["bL", L], ["bS", S]].forEach(([id, v]) => $("#" + id + "o").textContent = v); $("#bAo").textContent = p.toFixed(2);
+  const per = P * G; const tok = per * L * S; const mixed = P * (1 - p ** G - (1 - p) ** G);
+  $("#bC1").textContent = per; $("#bC2").textContent = tok >= 1e6 ? (tok / 1e6).toFixed(1) + "M" : (tok / 1e3).toFixed(0) + "k"; $("#bC3").textContent = mixed.toFixed(2) + " of " + P;
+}
+$$("#bP,#bG,#bL,#bS,#bA").forEach(i => i.addEventListener("input", () => { budget(); mark("playground"); })); budget();
+
+/* playground: diagnose */
+const DG = [
+  { t: "Total reward ↑, correctness flat", f: [u => .2 + .7 * (1 - Math.exp(-3 * u)), u => .3 + .02 * u], o: ["Healthy learning", "A bonus term is being farmed or the verifier has a hole", "Learning rate too low"], a: 1, e: "Reward that rises without accuracy is the classic hacking signature. Read rollouts." },
+  { t: "Group reward std over training", f: [u => .5 * Math.exp(-5 * u)], o: ["Std falling to ~0: groups all score the same, no signal", "Normal convergence, nothing to do", "KL is too high"], a: 0, e: "With no spread inside groups, every advantage is ~0. Check difficulty and the mixed share." },
+  { t: "KL over training", f: [u => .05 + .9 * u ** 3], o: ["Healthy, gentle rise", "Shooting up: the policy is drifting fast", "Means the verifier is too strict"], a: 1, e: "A sharp KL climb often comes with a hack or too high a learning rate." },
+  { t: "Completion length (cap = top line)", f: [u => Math.min(.97, .45 + .9 * u)], o: ["Pinned at the cap: answers get cut off before the tag", "Model is reasoning better, ignore", "Format reward is too small"], a: 0, e: "Truncated completions lose their answer tag and score 0. Raise the cap or penalise rambling." }
+];
+let dgAns = store.get("diag", {});
+$("#diag").innerHTML = DG.map((d, i) => `<div class="dcard"><b>${d.t}</b><canvas id="dg${i}"></canvas><label class="sr" for="dgs${i}">Diagnosis</label><select id="dgs${i}"><option value="">Choose a diagnosis…</option>${d.o.map((o, k) => `<option value="${k}">${esc(o)}</option>`).join("")}</select><div class="res" id="dgr${i}"></div></div>`).join("");
+function drawDiag() {
+  DG.forEach((d, i) => {
+    const cv = $("#dg" + i), dpr = devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight; if (!W) return;
+    cv.width = W * dpr; cv.height = H * dpr; const x = cv.getContext("2d"); x.scale(dpr, dpr);
+    x.strokeStyle = CSS("--line"); x.beginPath(); x.moveTo(4, H - 6); x.lineTo(W - 4, H - 6); x.stroke();
+    if (i === 3) { x.setLineDash([5, 4]); x.beginPath(); x.moveTo(4, 8); x.lineTo(W - 4, 8); x.stroke(); x.setLineDash([]); }
+    d.f.forEach((fn, k) => { x.strokeStyle = k ? CSS("--good") : CSS("--c1"); x.lineWidth = 3; x.beginPath(); for (let j = 0; j <= 60; j++) { const u = j / 60, X = 4 + u * (W - 8), Y = H - 6 - fn(u) * (H - 16); j ? x.lineTo(X, Y) : x.moveTo(X, Y); } x.stroke(); });
+    if (d.f.length > 1) { x.font = "12px IBM Plex Sans, sans-serif"; x.fillStyle = CSS("--c1"); x.fillText("total reward", 8, 16); x.fillStyle = CSS("--good"); x.fillText("correctness", 8, H - 12); }
+  });
+}
+DG.forEach((d, i) => {
+  const s = $("#dgs" + i), show = () => { const v = s.value; if (v === "") { $("#dgr" + i).textContent = ""; return; } const ok = +v === d.a; $("#dgr" + i).innerHTML = `<b style="color:var(${ok ? "--good" : "--bad"})">${ok ? "Right." : "Not quite."}</b> ${esc(d.e)}`; };
+  if (dgAns[i] !== undefined) { s.value = dgAns[i]; show(); }
+  s.addEventListener("change", () => { dgAns[i] = s.value; store.set("diag", dgAns); show(); mark("playground"); });
+});
+addEventListener("resize", () => { drawPk(); drawDiag(); });
+addEventListener("themechange", () => { drawPk(); drawDiag(); });
+
+/* quiz */
+const Q = [
+  { q: "Why must the baseline and the after-training eval use the same 200 problems, prompt and decoding?", o: ["So the run is faster", "So any difference can be attributed to training, not to a changed setup", "Because TRL requires it", "To save GPU memory"], a: 1, e: "Change one thing at a time. Otherwise you can't tell what caused the difference." },
+  { q: "What does LoRA do?", o: ["Quantizes the model to 4 bits", "Trains small adapter matrices while the base weights stay frozen", "Removes the KL penalty", "Doubles the batch size"], a: 1, e: "That's why it fits a free 16 GB GPU, and the saved adapter is small." },
+  { q: "Which data should GRPO train on?", o: ["The GSM8K test split", "The same 200 problems you evaluate on", "The GSM8K train split", "Any of the above"], a: 2, e: "Train on train, evaluate on test. Evaluating on training problems measures memory." },
+  { num: true, q: "With n = 8 samples and c = 2 correct, what is pass@1? (2 decimals)", ans: 0.25, tol: 0.005, e: "pass@1 = c / n = 2/8 = 0.25." },
+  { num: true, q: "With n = 8 and c = 2, what is pass@2 using the unbiased estimator? (2 decimals)", ans: 0.46, tol: 0.01, e: "1 − C(6,2)/C(8,2) = 1 − 15/28 ≈ 0.46." },
+  { num: true, q: "Of 50 sampled groups, 18 are all-correct and 12 are all-wrong. What is the mixed share? (2 decimals)", ans: 0.40, tol: 0.005, e: "Mixed groups = 50 − 18 − 12 = 20; 20/50 = 0.40." },
+  { q: "Total reward rises steadily but correctness reward stays flat. Most likely?", o: ["Healthy learning", "The format bonus is rising, or the verifier is being exploited", "The GPU is too slow", "The KL penalty is broken"], a: 1, e: "That's why you log each reward function separately." },
+  { q: "The group reward std falls close to 0. What does that mean?", o: ["Training converged perfectly", "Every group scores the same, so advantages are ~0 and there's little signal", "The verifier crashed", "The learning rate is too high"], a: 1, e: "Check prompt difficulty and the mixed share." },
+  { q: "You hit CUDA out of memory. What should you lower first?", o: ["The number of steps", "num_generations (G), then max_completion_length", "The logging frequency", "The number of eval problems"], a: 1, e: "Memory scales with completions per step and their length." },
+  { q: "Why push checkpoints to the Hugging Face Hub every 50 steps?", o: ["It speeds up training", "Free GPU sessions can disconnect; you resume instead of restarting", "TRL won't train otherwise", "To share results publicly"], a: 1, e: "A lost session costs minutes, not the run." }
+];
+let qi = 0, score = 0, answered = false, best = store.get("best", 0);
+function renderQ() {
+  const box = $("#quiz");
+  if (qi >= Q.length) {
+    const pass = score >= 8; best = Math.max(best, score); store.set("best", best); if (pass) { mark("quiz"); burst(); }
+    box.innerHTML = `<div class="score"><div class="big">${score}/${Q.length}</div><h3>${pass ? "Passed. Nice work." : "Not yet: 8 to pass."}</h3><p style="color:var(--muted)">Best so far: ${best}/${Q.length}.</p><div class="row" style="justify-content:center"><button class="btn ghost" id="retry">Retry quiz</button>${pass ? '<a class="btn good" href="#checkpoint">Go to checkpoint</a>' : ""}</div></div>`;
+    $("#retry").onclick = () => { qi = 0; score = 0; renderQ(); }; return;
+  }
+  const it = Q[qi]; answered = false;
+  if (!it.num) it.ord = it.o.map((_, i) => i).sort(() => Math.random() - .5);
+  box.innerHTML = `<div class="qhead"><span class="pill">Question ${qi + 1} of ${Q.length}</span><div class="qbar"><i style="width:${qi / Q.length * 100}%"></i></div><b style="font-variant-numeric:tabular-nums">${score} pts</b></div>
+    <h3 style="font-size:23px">${esc(it.q)}</h3>
+    ${it.num ? `<form class="numin" id="numf"><label for="numv" class="sr">Your answer</label><input id="numv" inputmode="decimal" placeholder="e.g. 0.50" autocomplete="off"><button class="btn">Check</button></form>` : `<div class="opts">${it.ord.map((oi, k) => `<button class="opt" data-i="${oi}">${String.fromCharCode(65 + k)}. ${esc(it.o[oi])}</button>`).join("")}</div>`}
+    <div id="fbox"></div>`;
+  if (it.num) { $("#numv").focus(); $("#numf").onsubmit = e => { e.preventDefault(); if (answered) return; const v = parseFloat($("#numv").value.replace(",", ".")); if (isNaN(v)) { $("#fbox").innerHTML = `<div class="fb" style="--c:var(--c4)">Type a number, like 0.50.</div>`; return; } finish(Math.abs(v - it.ans) <= it.tol); }; }
+  else $$(".opt").forEach(b => b.onclick = () => { if (answered) return; const i = +b.dataset.i; $$(".opt").forEach(x => { x.disabled = true; if (+x.dataset.i === it.a) x.classList.add("right"); }); if (i !== it.a) b.classList.add("wrong"); finish(i === it.a); });
+}
+function finish(ok) {
+  answered = true; const it = Q[qi]; if (ok) score++;
+  $("#fbox").innerHTML = `<div class="fb" style="--c:var(${ok ? "--good" : "--bad"})"><b>${ok ? "Correct." : "Not quite."}</b> ${it.num ? `Answer: ${it.ans.toFixed(2)}. ` : ""}${esc(it.e)}</div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" id="next">${qi + 1 < Q.length ? "Next question" : "See score"}</button></div>`;
+  if (ok && !reduce) burst(40); $("#next").focus(); $("#next").onclick = () => { qi++; renderQ(); };
+}
+renderQ();
+
+/* confetti */
+const cc = $("#confetti"), cx2 = cc.getContext("2d"); let bits = [];
+function burst(n = 160) { if (reduce) return; cc.width = innerWidth; cc.height = innerHeight; const cols = ["--c1", "--c2", "--c3", "--c4", "--good"].map(CSS); const start = !bits.length; for (let i = 0; i < n; i++) bits.push({ x: innerWidth / 2, y: innerHeight / 3, vx: (Math.random() - .5) * 16, vy: Math.random() * -14 - 4, c: cols[i % 5], life: 120 }); if (start) loopConf(); }
+function loopConf() { cx2.clearRect(0, 0, cc.width, cc.height); bits.forEach(b => { b.x += b.vx; b.y += b.vy; b.vy += .45; b.life--; cx2.fillStyle = b.c; cx2.fillRect(b.x, b.y, 8, 5); }); bits = bits.filter(b => b.life > 0); if (bits.length) requestAnimationFrame(loopConf); else cx2.clearRect(0, 0, cc.width, cc.height); }
+
+/* checkpoint */
+const TESTS = "import pytest\nfrom eval_utils import SYSTEM_PROMPT, build_messages, summarize, pass_at_k, mixed_share\n\n\n# build_messages: the same frozen prompt every time\ndef test_messages_shape():\n    m = build_messages(\"What is 2 + 2?\")\n    assert [x[\"role\"] for x in m] == [\"system\", \"user\"]\n    assert m[0][\"content\"] == SYSTEM_PROMPT and m[1][\"content\"] == \"What is 2 + 2?\"\n\ndef test_prompt_asks_for_answer_tag():\n    assert \"<answer>\" in SYSTEM_PROMPT\n\n\n# summarize: accuracy and format compliance from your two reward lists\ndef test_summarize_basic():\n    s = summarize([1.0, 0.0, 1.0, 0.0], [0.1, 0.1, 0.0, 0.1])\n    assert s == {\"n\": 4, \"accuracy\": 0.5, \"format_rate\": 0.75}\n\ndef test_summarize_empty():\n    assert summarize([], []) == {\"n\": 0, \"accuracy\": 0.0, \"format_rate\": 0.0}\n\n\n# pass_at_k: unbiased estimator from n samples with c correct\ndef test_pass_at_1_equals_accuracy():\n    assert pass_at_k(8, 2, 1) == pytest.approx(0.25)\n\ndef test_pass_at_k_all_wrong():\n    assert pass_at_k(8, 0, 8) == 0.0\n\ndef test_pass_at_k_guaranteed():\n    assert pass_at_k(8, 1, 8) == 1.0 and pass_at_k(10, 5, 6) == 1.0\n\ndef test_pass_at_k_value():\n    # 1 - C(6,2)/C(8,2) = 1 - 15/28\n    assert pass_at_k(8, 2, 2) == pytest.approx(13 / 28)\n\ndef test_pass_at_k_increases_with_k():\n    vals = [pass_at_k(16, 3, k) for k in (1, 2, 4, 8)]\n    assert vals == sorted(vals) and vals[0] < vals[-1]\n\n\n# mixed_share: share of groups that give GRPO a learning signal\ndef test_mixed_share_basic():\n    groups = [[1, 0, 0, 0], [1, 1, 1, 1], [0, 0, 0, 0], [0, 1, 1, 0]]\n    assert mixed_share(groups) == 0.5\n\ndef test_mixed_share_partial_credit_counts():\n    assert mixed_share([[1, 0.2, 0, 0]]) == 1.0 and mixed_share([[0.1, 0.1]]) == 0.0\n\ndef test_mixed_share_empty():\n    assert mixed_share([]) == 0.0\n";
+function hl(src) { return src.split("\n").map(line => { const ci = line.indexOf("#"); let code = ci >= 0 ? line.slice(0, ci) : line, cm = ci >= 0 ? line.slice(ci) : ""; code = esc(code).replace(/\b(import|from|def|assert|and|for|in|return)\b/g, '<span class="kw">$1</span>').replace(/\b(build_messages|summarize|pass_at_k|mixed_share|test_\w+|SYSTEM_PROMPT)\b/g, '<span class="fn">$1</span>'); return code + (cm ? `<span class="cm">${esc(cm)}</span>` : ""); }).join("\n"); }
+$("#tests").innerHTML = hl(TESTS);
+$$("[data-copy]").forEach(b => b.onclick = async () => { const t = b.dataset.copy === "tests" ? TESTS : $("#tbl").textContent; const lab = b.textContent; try { await navigator.clipboard.writeText(t); b.textContent = "Copied"; } catch (e) { b.textContent = "Select and copy"; } setTimeout(() => b.textContent = lab, 1800); });
+let ck = store.get("checks", {});
+["c1", "c2", "c3", "c4"].forEach(id => { const c = $("#" + id); c.checked = !!ck[id]; c.onchange = () => { ck[id] = c.checked; store.set("checks", ck); if (ck.c1 && ck.c2 && ck.c3) mark("checkpoint"); }; });
+
+paintProg(); route();
+});
+</script>
+</body>
+</html>
