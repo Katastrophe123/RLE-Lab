@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 7 · Publish and Plan · RLE Lab</title>
+<meta name="author" content="Kanishk Singh Parihar">
+<script>(function(){var t=null;try{t=localStorage.getItem("rle-theme")}catch(e){}if(!t){try{t=JSON.parse(window.name||"{}")["rle-theme"]}catch(e){}}if(t&&t!=="system")document.documentElement.setAttribute("data-mode",t)})()</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="stylesheet" href="../../assets/day.css">
+<script src="../../assets/site.js" defer></script>
+<style>
+.pgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; }
+.ctl { display: grid; grid-template-columns: 120px 1fr 64px; gap: 10px; align-items: center; margin: 8px 0; }
+.ctl output { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+.arena-in { width: 100%; font-family: var(--mono); font-size: 15px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.flag { margin-top: 10px; padding: 10px 12px; border-radius: 12px; font-weight: 500; border-left: 5px solid var(--c); background: var(--surface-2); }
+.advgrid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 14px; }
+.acol h4 { margin: 0 0 6px; font-size: 14px; color: var(--muted); }
+.arow { display: grid; grid-template-columns: 44px 1fr 74px; gap: 8px; align-items: center; margin: 4px 0; font-family: var(--mono); font-size: 14px; }
+.arow b { text-align: right; font-variant-numeric: tabular-nums; }
+.atrack { position: relative; height: 16px; border-radius: 8px; background: var(--bg-2); }
+.atrack::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; background: var(--line); }
+.atrack i { position: absolute; top: 0; height: 100%; border-radius: 8px; }
+.ok1 { color: var(--good); font-weight: 700; } .bad1 { color: var(--bad); font-weight: 700; }
+.note-ill { color: var(--muted); font-size: 13px; }
+.formgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.formgrid label { display: grid; gap: 4px; font-size: 14px; font-weight: 600; color: var(--muted); }
+.formgrid input { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; font-family: var(--mono); padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.lt th, .lt td { padding: 8px 6px; font-size: 14px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<canvas id="confetti" aria-hidden="true"></canvas>
+<header class="site-header">
+  <div class="site-bar">
+    <a class="brand" href="../../index.html"><span class="mark" aria-hidden="true"></span>RLE Lab</a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="../../index.html">Roadmap</a>
+      <a href="../day1/index.html">Day 1</a>
+      <a href="../day2/index.html">Day 2</a>
+      <a href="../day3/index.html">Day 3</a>
+      <a href="../day4/index.html">Day 4</a>
+      <a href="../day5/index.html">Day 5</a>
+      <a href="../day6/index.html">Day 6</a>
+      <a href="index.html" aria-current="page">Day 7</a>
+    </nav>
+    <button class="theme-btn" data-theme-btn type="button">Theme</button>
+  </div>
+  <div class="daybar">
+    <nav class="tabs" aria-label="Day 7 sections">
+      <a class="tab" href="#lecture" data-v="lecture" style="--c: var(--c1)"><span class="dot"></span>1 · Lecture<span class="tick">✓</span></a>
+      <a class="tab" href="#notes" data-v="notes" style="--c: var(--c2)"><span class="dot"></span>2 · Notes<span class="tick">✓</span></a>
+      <a class="tab" href="#playground" data-v="playground" style="--c: var(--c3)"><span class="dot"></span>3 · Playground<span class="tick">✓</span></a>
+      <a class="tab" href="#quiz" data-v="quiz" style="--c: var(--c4)"><span class="dot"></span>4 · Quiz<span class="tick">✓</span></a>
+      <a class="tab" href="#checkpoint" data-v="checkpoint" style="--c: var(--good)"><span class="dot"></span>5 · Checkpoint<span class="tick">✓</span></a>
+    </nav>
+    <div class="prog"><span id="progTxt">0 of 5 done</span><div class="ring" id="ring"><span id="ringPct">0%</span></div></div>
+  </div>
+</header>
+
+<main>
+<section class="view" id="v-lecture">
+  <span class="eyebrow">Day 7 · 7 min lecture · 2 hours today</span>
+  <h2>Publish your week, and plan week 2</h2>
+  <p class="lead">Turn the week into a write-up people can trust, a short public post, and one clear direction for next week.</p>
+  <div class="lecture">
+    <div>
+      <video id="vid" controls preload="metadata" src="day7_part1.mp4#t=0.6"></video>
+      <p style="color:var(--muted);font-size:14px;margin:8px 0 0">Part <span id="partNo">1</span> of 2 · part 2 starts automatically.</p>
+    </div>
+    <div class="card"><h3 style="margin-bottom:10px">Chapters</h3><div class="chapters" id="chapters"></div></div>
+  </div>
+</section>
+
+<section class="view" id="v-notes">
+  <span class="eyebrow">Day 7 · Notes</span>
+  <h2>Show your work</h2>
+  <p class="lead">People hiring for RL and evaluation roles look for proof that you can run the loop, find problems and report honestly. Your repository is that proof.</p>
+
+  <div class="card note" style="--c: var(--c4)">
+    <div class="head"><div class="num">1</div><h3>The README, in seven parts</h3></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Section</th><th>What goes in it</th></tr></thead>
+      <tbody>
+        <tr><td><b>Summary</b></td><td>One paragraph. The result in numbers, with an interval or p-value.</td></tr>
+        <tr><td><b>Setup</b></td><td>Model, dataset split, GPU, LoRA, the key GRPO settings.</td></tr>
+        <tr><td><b>Verifier rules</b></td><td>Every rule and the reason for it. Link to the tests.</td></tr>
+        <tr><td><b>Results</b></td><td>The table (baseline, v1, v2), a chart, and your verdict.</td></tr>
+        <tr><td><b>What I learned</b></td><td>3–5 bullets. The surprises, not the obvious.</td></tr>
+        <tr><td><b>Limitations</b></td><td>Model size, number of problems, seeds, one dataset.</td></tr>
+        <tr><td><b>Reproduce</b></td><td>Pinned versions, seed, prompt file, config, exact commands.</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="card note" style="--c: var(--c1)">
+    <div class="head"><div class="num">2</div><h3>Write results honestly</h3></div>
+    <ul>
+      <li><b>Lead with numbers.</b> "Accuracy changed from 41% to 43% on 200 problems (p ≈ 0.42, within noise)" beats "great results".</li>
+      <li><b>Same evaluation for every row</b>, including a baseline before any RL. Say <i>n</i>, and say if it's a single seed.</li>
+      <li><b>An interval next to each number.</b> The 95% Wilson interval for 82/200 is 34.4–47.9%. To halve the interval's width you need about <b>4×</b> the problems: width shrinks with the square root of <i>n</i>.</li>
+      <li><b>Honest charts.</b> Label axes. Don't crop the vertical axis so a 2-point gap looks like a cliff. One idea per chart.</li>
+      <li><b>Report what didn't work</b>, with your best guess why. A null result written clearly builds trust.</li>
+    </ul>
+  </div>
+
+  <div class="card note" style="--c: var(--c3)">
+    <div class="head"><div class="num">3</div><h3>Reproducible and tidy</h3></div>
+<pre class="code">rle-week1/
+├─ verifier/   verifier_v2.py, tests
+├─ eval/       eval_utils.py, compare_runs.py, report.py
+├─ rl/         train.py, grpo_math.py
+├─ notes/      verifier_audit.md, grpo_variants.md, scaling.md
+├─ results/    tables, charts, sample rollouts
+└─ README.md</pre>
+    <p>Pin versions (<code>pip freeze &gt; requirements.txt</code>), record the seed, keep the prompt in a file, keep configs in files, and make <code>pytest -q</code> run every test. Push the LoRA adapter to the Hugging Face Hub with a model card so anyone can load it.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--c2)">
+    <div class="head"><div class="num">4</div><h3>The public post and the interview story</h3></div>
+    <p><b>Post</b> (LinkedIn or X): open with the most surprising concrete finding ("a model can get full reward for writing 7 2"), then 3–4 plain sentences, one image, the link. No hype words.</p>
+    <p><b>Interview story:</b> problem → what you did → what you measured → what you'd do next. Practise two 60-second answers: how the GRPO advantage works, and one verifier hole you found and fixed.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--c5)">
+    <div class="head"><div class="num">5</div><h3>Week 2: pick one track</h3></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Track</th><th>You'll learn</th><th>Compute</th><th>Builds on</th></tr></thead>
+      <tbody>
+        <tr><td><b>Code</b></td><td>Unit-test rewards, sandboxes, time limits, test-editing hacks</td><td>Free GPU</td><td>Days 2 and 4</td></tr>
+        <tr><td><b>Judges and rubrics</b></td><td>LLM-as-judge rewards, agreement with people, judge flattery</td><td>Free GPU + an API judge</td><td>Your rubric work</td></tr>
+        <tr><td><b>Agents</b></td><td>Multi-step tool use, environments, credit for a reward that comes at the end</td><td>More</td><td>Day 6 environments</td></tr>
+        <tr><td><b>Infrastructure</b></td><td>verl or OpenRLHF, vLLM server mode, async runs</td><td>Rented multi-GPU</td><td>Day 6 scale-up</td></tr>
+      </tbody>
+    </table></div>
+    <p>Every track follows the same week pattern: concepts → build the reward → baseline and run → attack → fix → compare → publish.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--good)">
+    <div class="head"><div class="num">6</div><h3>README template</h3></div>
+<pre class="code" id="tpl"># RL week 1: GRPO on GSM8K with a hardened verifier
+
+## Summary
+Fixing three verifier holes changed accuracy from __% to __% on __ GSM8K test problems
+(McNemar p = __, bootstrap 95% interval __ to __ points). Verdict: __.
+
+## Setup
+Qwen2.5-0.5B-Instruct, LoRA, TRL GRPOTrainer, __ steps, G = __, max length __.
+
+## Verifier rules
+- ...
+
+## Results
+| Run | Accuracy | 95% CI | n |
+|---|---|---|---|
+
+## What I learned
+- ...
+
+## Limitations
+- 0.5B model, __ problems, one seed, one dataset.
+
+## Reproduce
+pip install -r requirements.txt
+pytest -q
+python rl/train.py --config configs/grpo_v2.yaml</pre>
+    <div class="row" style="margin-top:8px"><button class="btn ghost" data-copy="tpl">Copy template</button></div>
+  </div>
+
+  <div class="card note" style="--c: var(--c5)">
+    <div class="head"><div class="num">7</div><h3>Flip cards</h3></div>
+    <div class="flips" id="flips"></div>
+  </div>
+  <div class="card note" style="--c: var(--c3)">
+    <div class="head"><div class="num">8</div><h3>Glossary</h3></div>
+    <input class="gloss-in" id="glossQ" type="search" placeholder="Filter terms…" aria-label="Filter glossary">
+    <dl class="gloss" id="gloss"><div><dt>README</dt><dd>The front page of a code repository.</dd></div><div><dt>Reproducible</dt><dd>Someone else can follow your steps and get the same numbers.</dd></div><div><dt>Limitation</dt><dd>An honest statement of what your result does not show.</dd></div><div><dt>Model card</dt><dd>A README for a model on its Hugging Face page.</dd></div><div><dt>Baseline</dt><dd>Your numbers before any RL, measured the same way.</dd></div><div><dt>Wilson interval</dt><dd>A 95% range for an accuracy that behaves well near 0% and 100%.</dd></div><div><dt>Null result</dt><dd>An experiment that found no clear difference. Still worth reporting.</dd></div><div><dt>Pinned versions</dt><dd>Exact library versions written down, e.g. in requirements.txt.</dd></div><div><dt>LLM judge</dt><dd>A language model that grades answers, usually against a rubric.</dd></div><div><dt>Agentic RL</dt><dd>Training a model that uses tools over many steps.</dd></div><div><dt>Credit assignment</dt><dd>Working out which steps earned a reward that only arrives at the end.</dd></div></dl>
+    <script>document.getElementById("glossQ").addEventListener("input",function(e){var q=e.target.value.toLowerCase();document.querySelectorAll("#gloss>div").forEach(function(d){d.hidden=q&&d.textContent.toLowerCase().indexOf(q)<0})})</script>
+  </div>
+</section>
+
+<section class="view" id="v-playground">
+  <span class="eyebrow">Day 7 · Playground</span>
+  <h2>Build your write-up</h2>
+  <p class="lead">Type your real numbers and get a summary sentence and results table to paste into your README. Then pick your week 2 track.</p>
+  <div class="pgrid">
+    <div class="card">
+      <h3>Results builder</h3>
+      <div class="formgrid">
+        <label>problems (n)<input id="rN" type="number" min="1" value="200"></label>
+        <label>baseline correct<input id="rB" type="number" min="0" value="77"></label>
+        <label>v1 correct<input id="r1" type="number" min="0" value="82"></label>
+        <label>v2 correct<input id="r2" type="number" min="0" value="86"></label>
+        <label>only v1 right<input id="rA" type="number" min="0" value="5"></label>
+        <label>only v2 right<input id="rC" type="number" min="0" value="9"></label>
+      </div>
+      <div class="flag" id="rWarn" style="--c: var(--bad);display:none"></div>
+      <div class="codebox" style="margin-top:12px"><button class="btn" id="rCopy">Copy</button><pre class="code" id="rOut" style="white-space:pre-wrap"></pre></div>
+    </div>
+    <div class="card">
+      <h3>Week 2 picker</h3>
+      <div class="qpick" id="pick"></div>
+      <div class="flag" id="pickOut" style="--c: var(--c5)"></div>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="v-quiz">
+  <span class="eyebrow">Day 7 · Quiz</span>
+  <h2>10 questions. Score 8+ to pass.</h2>
+  <p class="lead">Multiple choice plus two you compute yourself.</p>
+  <div class="qwrap card" id="quiz"></div>
+</section>
+
+<section class="view" id="v-checkpoint">
+  <span class="eyebrow">Day 7 · Checkpoint</span>
+  <h2>Publish week 1</h2>
+  <p class="lead">A small helper module, a finished README, a drafted post, and your week 2 pick. Send me the README link.</p>
+  <div class="grid2">
+    <div class="card">
+      <h3>Tasks</h3>
+      <ol>
+        <li>Write <code>eval/report.py</code> with:
+          <ul>
+            <li><code>wilson(k, n, z=1.96)</code>: <code>(lo, hi)</code> as fractions, clamped to [0, 1]; <code>ValueError</code> if n ≤ 0 or k is outside 0..n</li>
+            <li><code>fmt_row(name, k, n)</code>: <code>"| name | 41.0% | 34.4–47.9% | 200 |"</code> (one decimal, en dash)</li>
+            <li><code>results_table(rows)</code>: header <code>| Run | Accuracy | 95% CI | n |</code>, separator, one line per row, each ending in a newline</li>
+            <li><code>REQUIRED = ["Summary", "Setup", "Verifier rules", "Results", "What I learned", "Limitations", "Reproduce"]</code></li>
+            <li><code>missing_sections(readme)</code>: which of the seven sections have no <code>## Heading</code> (case-insensitive, in order)</li>
+          </ul>
+        </li>
+        <li>Pass the 16 tests on the right.</li>
+        <li>Finish <code>README.md</code> (run <code>missing_sections</code> on it), push the adapter with a model card.</li>
+        <li>Draft your post, and send me your week 2 pick.</li>
+      </ol>
+      <h3 style="margin-top:14px">Your checklist</h3>
+      <div class="checks">
+        <label><input type="checkbox" id="c1"> 16 tests pass</label>
+        <label><input type="checkbox" id="c2"> README has all seven sections</label>
+        <label><input type="checkbox" id="c3"> Post drafted</label>
+        <label><input type="checkbox" id="c4"> Week 2 pick sent to Claude</label>
+      </div>
+    </div>
+    <div>
+      <p style="margin-top:0"><b>Tests</b>: save as <code>eval/test_report.py</code>, run <code>pytest</code>.</p>
+      <div class="codebox"><button class="btn" data-copy="tests">Copy</button><pre class="code" id="tests" style="max-height:640px"></pre></div>
+      <p class="note-ill">Checked against a reference solution: all 16 pass. Versions that skip clamping, use a hyphen, ignore multi-line headings, count ### headings, drop the z² terms, or match case-sensitively each fail at least one.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="site-foot"><div class="in"><span>RLE Lab · Kanishk Singh Parihar · Day 7 of 7</span><a href="../../index.html">Back to the roadmap</a></div></footer>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const store = { get: (k, d) => window.RLE.store.get("d7-" + k, d), set: (k, v) => window.RLE.store.set("d7-" + k, v) };
+const CSS = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+const VIEWS = ["lecture", "notes", "playground", "quiz", "checkpoint"];
+let done = store.get("done", {});
+function mark(v) { if (!done[v]) { done[v] = true; store.set("done", done); paintProg(); } }
+function paintProg() { const n = VIEWS.filter(v => done[v]).length; $("#progTxt").textContent = `${n} of 5 done`; $("#ring").style.setProperty("--p", n * 20); $("#ringPct").textContent = n * 20 + "%"; $$(".tab").forEach(t => t.classList.toggle("done", !!done[t.dataset.v])); }
+function route() {
+  const h = location.hash.slice(1), v = VIEWS.includes(h) ? h : "lecture";
+  $$(".view").forEach(s => s.classList.toggle("on", s.id === "v-" + v));
+  $$(".tab").forEach(t => { if (t.dataset.v === v) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current"); });
+  if (v === "notes") setTimeout(() => mark("notes"), 20000);
+  window.scrollTo({ top: 0 });
+}
+addEventListener("hashchange", route);
+
+const CH = [["Intro", 0.0], ["Why publish", 36.2], ["Words you need", 56.2], ["README in seven parts", 81.3], ["Lead with numbers", 97.6], ["The results table", 117.7], ["Honest charts", 139.6], ["Say what didn't work", 158.2], ["Reproducible", 177.9], ["A tidy repo", 197.6], ["The public post", 216.8], ["Interview story", 236.7], ["Week 2 options", 258.3], ["Option 1: code", 268.0], ["Option 2: judges", 281.9], ["Option 3: agents", 300.8], ["Option 4: infra", 316.5], ["How to choose", 332.7], ["The weekly pattern", 352.8], ["Week 1 recap", 368.9], ["Your checkpoint", 394.8]];
+const PARTS = [["day7_part1.mp4", 0], ["day7_part2.mp4", 216.8]], TOTAL = 415.9;
+const vid = $("#vid"); let part = 0;
+const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+function loadPart(i, at = 0, play = false) { if (part !== i) { part = i; vid.src = PARTS[i][0]; $("#partNo").textContent = i + 1; } const go = () => { vid.currentTime = at; if (play) vid.play().catch(() => {}); }; if (vid.readyState >= 1) go(); else vid.addEventListener("loadedmetadata", go, { once: true }); }
+function seekGlobal(t) { const i = t >= PARTS[1][1] ? 1 : 0; loadPart(i, t - PARTS[i][1], true); }
+$("#chapters").innerHTML = CH.map(([n, t]) => `<button class="chap" data-t="${t}"><time>${fmt(t)}</time><span>${n}</span></button>`).join("");
+$$(".chap").forEach(b => b.addEventListener("click", () => seekGlobal(+b.dataset.t)));
+vid.addEventListener("ended", () => { if (part === 0) loadPart(1, 0, true); else mark("lecture"); });
+vid.addEventListener("timeupdate", () => { const t = PARTS[part][1] + vid.currentTime; let cur = 0; CH.forEach(([, s], i) => { if (t >= s) cur = i; }); $$(".chap").forEach((b, i) => b.classList.toggle("now", i === cur)); if (t / TOTAL > 0.9) mark("lecture"); });
+
+/* ---- math ---- */
+function comb(n, k) { let r = 1; for (let i = 1; i <= k; i++) r = r * (n - k + i) / i; return r; }
+function mcnemar(a, b) { const n = a + b; if (!n) return 1; const k = Math.min(a, b); let s = 0; for (let i = 0; i <= k; i++) s += comb(n, i); return Math.min(1, 2 * s / Math.pow(2, n)); }
+function wilson(k, n, z = 1.96) { const p = k / n, d = 1 + z * z / n, c = (p + z * z / (2 * n)) / d, h = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d; return [Math.max(0, c - h), Math.min(1, c + h)]; }
+const pct = x => (100 * x).toFixed(1);
+function row(name, k, n) { const [lo, hi] = wilson(k, n); return `| ${name} | ${pct(k / n)}% | ${pct(lo)}–${pct(hi)}% | ${n} |`; }
+
+/* flip cards */
+const FL = [["Summary sentence", "README", "The result in numbers, with n and a p-value or interval.", "--c4"],
+  ["Baseline row", "table", "The same evaluation before any RL, so readers see the starting point.", "--c1"],
+  ["Halve the interval", "stats", "Needs about 4× the problems: width shrinks with √n.", "--c3"],
+  ["Cropped axis", "charts", "Makes a 2-point gap look like a cliff. Don't.", "--bad"],
+  ["Null result", "honesty", "Report it clearly, with your best guess why.", "--c2"],
+  ["Reproducible", "repo", "Pinned versions, seed, prompt file, config, commands.", "--good"],
+  ["Post hook", "public", "Your most surprising concrete finding. No hype words.", "--c5"],
+  ["One track", "week 2", "Code, judges, agents or infra. Deep beats wide.", "--c4"]];
+$("#flips").innerHTML = FL.map(([f, k, b, c]) => `<button class="flip" style="--c: var(${c})" aria-label="${esc(f)}: flip to reveal"><div class="in"><div class="f">${esc(f)}<small>${k} · tap to flip</small></div><div class="bk">${esc(b)}</div></div></button>`).join("");
+$$(".flip").forEach(b => b.onclick = () => b.classList.toggle("on"));
+
+/* results builder */
+function build() {
+  const n = Math.max(1, Math.floor(+$("#rN").value || 1)), g = id => Math.max(0, Math.floor(+$(id).value || 0));
+  const B = g("#rB"), V1 = g("#r1"), V2 = g("#r2"), oa = g("#rA"), ob = g("#rC");
+  const warn = [];
+  if ([B, V1, V2].some(x => x > n)) warn.push("A correct count is larger than n.");
+  if (V2 - V1 !== ob - oa) warn.push(`Check the boxes: v2 − v1 = ${V2 - V1}, but only-v2 − only-v1 = ${ob - oa}. They must match.`);
+  $("#rWarn").style.display = warn.length ? "block" : "none"; $("#rWarn").textContent = warn.join(" ");
+  if ([B, V1, V2].some(x => x > n)) { $("#rOut").textContent = ""; return; }
+  const p = mcnemar(oa, ob), v = (oa + ob === 0 || p >= 0.05) ? "can't tell yet (within noise)" : (ob > oa ? "v2 is better" : "v2 is worse");
+  const ps = p < 0.001 ? p.toExponential(1) : p.toFixed(3);
+  const txt = `## Summary
+Fixing the verifier changed accuracy from ${pct(V1 / n)}% (v1) to ${pct(V2 / n)}% (v2) on ${n} test problems. v2 won ${ob} and lost ${oa} of the problems where the runs disagreed (exact McNemar p = ${ps}). Verdict: ${v}.
+
+## Results
+| Run | Accuracy | 95% CI | n |
+|---|---|---|---|
+${row("baseline (no RL)", B, n)}
+${row("run v1", V1, n)}
+${row("run v2", V2, n)}
+
+Single seed. 95% Wilson intervals.`;
+  $("#rOut").textContent = txt;
+}
+["#rN", "#rB", "#r1", "#r2", "#rA", "#rC"].forEach(s => $(s).addEventListener("input", () => { build(); mark("playground"); }));
+$("#rCopy").onclick = async () => { const b = $("#rCopy"); try { await navigator.clipboard.writeText($("#rOut").textContent); b.textContent = "Copied"; } catch (e) { b.textContent = "Select and copy"; } setTimeout(() => b.textContent = "Copy", 1800); };
+build();
+
+/* week 2 picker */
+const PQ = [
+  { q: "Your main goal", o: [["Post-training / eval roles", { judge: 3, code: 2, agent: 1, infra: 0 }], ["Research engineer on RL systems", { infra: 3, agent: 2, code: 1, judge: 0 }], ["Agent products", { agent: 3, code: 2, judge: 1, infra: 0 }]] },
+  { q: "Compute you have", o: [["Free Colab / Kaggle only", { code: 2, judge: 2, agent: 0, infra: -3 }], ["Some paid GPU hours", { agent: 1, infra: 0, code: 1, judge: 1 }], ["Multi-GPU budget", { infra: 3, agent: 2 }]] },
+  { q: "What sounds most fun", o: [["Breaking and fixing graders", { judge: 2, code: 2 }], ["Making things fast at scale", { infra: 3 }], ["Models that use tools", { agent: 3 }]] }
+];
+const NAMES = { code: "Code (unit-test rewards in sandboxes)", judge: "Judges and rubrics", agent: "Agents (multi-step tool use)", infra: "Infrastructure (verl / OpenRLHF, async)" };
+let picks = store.get("picks", [0, 0, 0]);
+function renderPick() {
+  $("#pick").innerHTML = PQ.map((it, i) => `<p style="margin:10px 0 6px;font-weight:700">${esc(it.q)}</p><div class="row" style="flex-wrap:wrap">${it.o.map(([l], j) => `<button class="btn ${picks[i] === j ? "" : "ghost"}" data-q="${i}" data-o="${j}">${esc(l)}</button>`).join("")}</div>`).join("");
+  $$("#pick [data-q]").forEach(b => b.onclick = () => { picks[+b.dataset.q] = +b.dataset.o; store.set("picks", picks); renderPick(); mark("playground"); });
+  const s = { code: 0, judge: 0, agent: 0, infra: 0 };
+  PQ.forEach((it, i) => Object.entries(it.o[picks[i]][1]).forEach(([k, v]) => s[k] += v));
+  const best = Object.entries(s).sort((a, b) => b[1] - a[1]);
+  $("#pickOut").innerHTML = `Suggested track: <b>${NAMES[best[0][0]]}</b>. Runner-up: ${NAMES[best[1][0]]}.`;
+}
+renderPick();
+
+/* quiz */
+const Q = [
+  { q: "Which is the best first sentence for a README summary?", o: ["We achieved amazing results with RL!", "Accuracy changed from 41% to 43% on 200 problems (p ≈ 0.42, within noise).", "This repo contains code.", "GRPO is a great algorithm."], a: 1, e: "Specific, with n and a measure of uncertainty." },
+  { q: "Every results table should include…", o: ["Only the best run", "A baseline row measured with the same evaluation", "Training loss only", "No numbers, just charts"], a: 1, e: "Readers need the starting point, measured the same way." },
+  { num: true, q: "A run got 82 of 200 problems right. What is its accuracy in percent?", ans: 41, tol: 0.05, e: "82 / 200 = 41%.", fmt: 0 },
+  { num: true, q: "Roughly how many times more problems do you need to halve the width of an accuracy interval?", ans: 4, tol: 0.01, e: "Width shrinks with the square root of n, so 4× the problems halves it.", fmt: 0 },
+  { q: "Cropping a chart's vertical axis to 40.5–43.2%…", o: ["Is required", "Makes a small gap look huge", "Hides noise honestly", "Has no effect"], a: 1, e: "Use honest axes; one idea per chart." },
+  { q: "v2 didn't clearly beat v1. In the README you should…", o: ["Leave it out", "Report it, with your best guess why", "Rerun until it wins and report that", "Only report v1"], a: 1, e: "A clear null result builds trust; cherry-picking destroys it." },
+  { q: "Which makes a result reproducible?", o: ["A screenshot of the chart", "Pinned versions, seed, prompt file, config and commands", "A long README", "A big model"], a: 1, e: "Someone else should get your numbers by following your steps." },
+  { q: "A good public post opens with…", o: ["A list of your skills", "Your most surprising concrete finding", "Hype words", "The full config"], a: 1, e: "The finding is the hook." },
+  { q: "Order of an interview story?", o: ["Problem → action → measure → next", "Next → problem → action", "Tools → libraries → models", "Measure → problem"], a: 0, e: "Problem, what you did, what you measured, what you'd do next." },
+  { q: "For post-training and evaluation roles on free GPUs, which week 2 tracks fit best?", o: ["Infrastructure only", "Judges and rubrics, or code", "Agents only", "All four at once"], a: 1, e: "They build on your current work and run on free GPUs. Pick one." }
+];
+let qi = 0, score = 0, answered = false, best = store.get("best", 0);
+function renderQ() {
+  const box = $("#quiz");
+  if (qi >= Q.length) {
+    const pass = score >= 8; best = Math.max(best, score); store.set("best", best); if (pass) { mark("quiz"); burst(); }
+    box.innerHTML = `<div class="score"><div class="big">${score}/${Q.length}</div><h3>${pass ? "Passed. Nice work." : "Not yet: 8 to pass."}</h3><p style="color:var(--muted)">Best so far: ${best}/${Q.length}.</p><div class="row" style="justify-content:center"><button class="btn ghost" id="retry">Retry quiz</button>${pass ? '<a class="btn good" href="#checkpoint">Go to checkpoint</a>' : ""}</div></div>`;
+    $("#retry").onclick = () => { qi = 0; score = 0; renderQ(); }; return;
+  }
+  const it = Q[qi]; answered = false;
+  if (!it.num) it.ord = it.o.map((_, i) => i).sort(() => Math.random() - .5);
+  box.innerHTML = `<div class="qhead"><span class="pill">Question ${qi + 1} of ${Q.length}</span><div class="qbar"><i style="width:${qi / Q.length * 100}%"></i></div><b style="font-variant-numeric:tabular-nums">${score} pts</b></div>
+    <h3 style="font-size:23px">${esc(it.q)}</h3>
+    ${it.num ? `<form class="numin" id="numf"><label for="numv" class="sr">Your answer</label><input id="numv" inputmode="decimal" placeholder="e.g. 0.50" autocomplete="off"><button class="btn">Check</button></form>` : `<div class="opts">${it.ord.map((oi, k) => `<button class="opt" data-i="${oi}">${String.fromCharCode(65 + k)}. ${esc(it.o[oi])}</button>`).join("")}</div>`}
+    <div id="fbox"></div>`;
+  if (it.num) { $("#numv").focus(); $("#numf").onsubmit = e => { e.preventDefault(); if (answered) return; const v = parseFloat($("#numv").value.replace(",", ".")); if (isNaN(v)) { $("#fbox").innerHTML = `<div class="fb" style="--c:var(--c4)">Type a number, like 0.50.</div>`; return; } finish(Math.abs(v - it.ans) <= it.tol); }; }
+  else $$(".opt").forEach(b => b.onclick = () => { if (answered) return; const i = +b.dataset.i; $$(".opt").forEach(x => { x.disabled = true; if (+x.dataset.i === it.a) x.classList.add("right"); }); if (i !== it.a) b.classList.add("wrong"); finish(i === it.a); });
+}
+function finish(ok) {
+  answered = true; const it = Q[qi]; if (ok) score++;
+  $("#fbox").innerHTML = `<div class="fb" style="--c:var(${ok ? "--good" : "--bad"})"><b>${ok ? "Correct." : "Not quite."}</b> ${it.num ? `Answer: ${it.ans.toFixed(it.fmt ?? 2)}. ` : ""}${esc(it.e)}</div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" id="next">${qi + 1 < Q.length ? "Next question" : "See score"}</button></div>`;
+  if (ok && !reduce) burst(40); $("#next").focus(); $("#next").onclick = () => { qi++; renderQ(); };
+}
+renderQ();
+
+const cc = $("#confetti"), cx2 = cc.getContext("2d"); let bits = [];
+function burst(n = 160) { if (reduce) return; cc.width = innerWidth; cc.height = innerHeight; const cols = ["--c1", "--c2", "--c3", "--c4", "--good"].map(CSS); const start = !bits.length; for (let i = 0; i < n; i++) bits.push({ x: innerWidth / 2, y: innerHeight / 3, vx: (Math.random() - .5) * 16, vy: Math.random() * -14 - 4, c: cols[i % 5], life: 120 }); if (start) loopConf(); }
+function loopConf() { cx2.clearRect(0, 0, cc.width, cc.height); bits.forEach(b => { b.x += b.vx; b.y += b.vy; b.vy += .45; b.life--; cx2.fillStyle = b.c; cx2.fillRect(b.x, b.y, 8, 5); }); bits = bits.filter(b => b.life > 0); if (bits.length) requestAnimationFrame(loopConf); else cx2.clearRect(0, 0, cc.width, cc.height); }
+
+const TESTS = "import pytest\nfrom report import wilson, fmt_row, results_table, missing_sections, REQUIRED\n\ndef test_wilson_middle():\n    lo, hi = wilson(82, 200); assert abs(lo - 0.3441) < 1e-3 and abs(hi - 0.4793) < 1e-3\ndef test_wilson_zero():\n    lo, hi = wilson(0, 10); assert lo == 0.0 and abs(hi - 0.2775) < 1e-3\ndef test_wilson_all():\n    lo, hi = wilson(10, 10); assert hi == 1.0 and abs(lo - 0.7225) < 1e-3\ndef test_wilson_narrows_with_n():\n    a = wilson(41, 100); b = wilson(410, 1000); assert (b[1] - b[0]) < (a[1] - a[0])\ndef test_wilson_bad_n():\n    with pytest.raises(ValueError): wilson(1, 0)\ndef test_wilson_bad_k():\n    with pytest.raises(ValueError): wilson(11, 10)\n\ndef test_fmt_row_exact():\n    assert fmt_row(\"baseline\", 82, 200) == \"| baseline | 41.0% | 34.4\u201347.9% | 200 |\"\ndef test_fmt_row_uses_en_dash():\n    assert \"\u2013\" in fmt_row(\"x\", 5, 10) and \"-\" not in fmt_row(\"x\", 5, 10).replace(\"| x |\", \"\")\n\ndef test_table_exact():\n    t = results_table([(\"v1\", 82, 200), (\"v2\", 86, 200)])\n    assert t == (\"| Run | Accuracy | 95% CI | n |\\n|---|---|---|---|\\n\"\n                 \"| v1 | 41.0% | 34.4\u201347.9% | 200 |\\n| v2 | 43.0% | 36.3\u201349.9% | 200 |\\n\")\ndef test_table_empty():\n    assert results_table([]) == \"| Run | Accuracy | 95% CI | n |\\n|---|---|---|---|\\n\"\n\nFULL = \"# My RL week\\n\" + \"\".join(f\"## {s}\\ntext\\n\" for s in REQUIRED)\ndef test_complete_readme():        assert missing_sections(FULL) == []\ndef test_missing_two():\n    t = FULL.replace(\"## Limitations\\n\", \"\").replace(\"## Setup\\n\", \"\"); assert missing_sections(t) == [\"Setup\", \"Limitations\"]\ndef test_case_insensitive():       assert missing_sections(FULL.lower()) == []\ndef test_h3_does_not_count():      assert \"Results\" in missing_sections(FULL.replace(\"## Results\", \"### Results\"))\ndef test_mention_is_not_heading(): assert \"Reproduce\" in missing_sections(FULL.replace(\"## Reproduce\", \"See Reproduce below\"))\ndef test_trailing_spaces_ok():     assert missing_sections(FULL.replace(\"## Summary\", \"##   Summary   \")) == []\n";
+function hl(src) { return src.split("\n").map(line => { const ci = line.indexOf("#"); let code = ci >= 0 ? line.slice(0, ci) : line, cm = ci >= 0 ? line.slice(ci) : ""; code = esc(code).replace(/\b(import|from|def|assert|and|is|None|return|for|in|with|lambda)\b/g, '<span class="kw">$1</span>').replace(/\b(wilson|fmt_row|results_table|missing_sections|test_\w+|abs|all|sum|replace)\b/g, '<span class="fn">$1</span>'); return code + (cm ? `<span class="cm">${esc(cm)}</span>` : ""); }).join("\n"); }
+$("#tests").innerHTML = hl(TESTS);
+$$("[data-copy]").forEach(b => b.onclick = async () => { const t = b.dataset.copy === "tests" ? TESTS : $("#tpl").textContent; const lab = b.textContent; try { await navigator.clipboard.writeText(t); b.textContent = "Copied"; } catch (e) { b.textContent = "Select and copy"; } setTimeout(() => b.textContent = lab, 1800); });
+let ck = store.get("checks", {});
+["c1", "c2", "c3", "c4"].forEach(id => { const c = $("#" + id); c.checked = !!ck[id]; c.onchange = () => { ck[id] = c.checked; store.set("checks", ck); if (ck.c1 && ck.c2 && ck.c3) mark("checkpoint"); }; });
+
+paintProg(); route();
+});
+</script>
+</body>
+</html>

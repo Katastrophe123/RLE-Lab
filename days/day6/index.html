@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 6 · Compare and Scale · RLE Lab</title>
+<meta name="author" content="Kanishk Singh Parihar">
+<script>(function(){var t=null;try{t=localStorage.getItem("rle-theme")}catch(e){}if(!t){try{t=JSON.parse(window.name||"{}")["rle-theme"]}catch(e){}}if(t&&t!=="system")document.documentElement.setAttribute("data-mode",t)})()</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="stylesheet" href="../../assets/day.css">
+<script src="../../assets/site.js" defer></script>
+<style>
+.pgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; }
+.ctl { display: grid; grid-template-columns: 120px 1fr 64px; gap: 10px; align-items: center; margin: 8px 0; }
+.ctl output { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+.arena-in { width: 100%; font-family: var(--mono); font-size: 15px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.flag { margin-top: 10px; padding: 10px 12px; border-radius: 12px; font-weight: 500; border-left: 5px solid var(--c); background: var(--surface-2); }
+.advgrid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 14px; }
+.acol h4 { margin: 0 0 6px; font-size: 14px; color: var(--muted); }
+.arow { display: grid; grid-template-columns: 44px 1fr 74px; gap: 8px; align-items: center; margin: 4px 0; font-family: var(--mono); font-size: 14px; }
+.arow b { text-align: right; font-variant-numeric: tabular-nums; }
+.atrack { position: relative; height: 16px; border-radius: 8px; background: var(--bg-2); }
+.atrack::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; background: var(--line); }
+.atrack i { position: absolute; top: 0; height: 100%; border-radius: 8px; }
+.ok1 { color: var(--good); font-weight: 700; } .bad1 { color: var(--bad); font-weight: 700; }
+.note-ill { color: var(--muted); font-size: 13px; }
+.formgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.formgrid label { display: grid; gap: 4px; font-size: 14px; font-weight: 600; color: var(--muted); }
+.formgrid input { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; font-family: var(--mono); padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.lt th, .lt td { padding: 8px 6px; font-size: 14px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<canvas id="confetti" aria-hidden="true"></canvas>
+<header class="site-header">
+  <div class="site-bar">
+    <a class="brand" href="../../index.html"><span class="mark" aria-hidden="true"></span>RLE Lab</a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="../../index.html">Roadmap</a>
+      <a href="../day1/index.html">Day 1</a>
+      <a href="../day2/index.html">Day 2</a>
+      <a href="../day3/index.html">Day 3</a>
+      <a href="../day4/index.html">Day 4</a>
+      <a href="../day5/index.html">Day 5</a>
+      <a href="index.html" aria-current="page">Day 6</a>
+      <a href="../day7/index.html">Day 7</a>
+    </nav>
+    <button class="theme-btn" data-theme-btn type="button">Theme</button>
+  </div>
+  <div class="daybar">
+    <nav class="tabs" aria-label="Day 6 sections">
+      <a class="tab" href="#lecture" data-v="lecture" style="--c: var(--c1)"><span class="dot"></span>1 · Lecture<span class="tick">✓</span></a>
+      <a class="tab" href="#notes" data-v="notes" style="--c: var(--c2)"><span class="dot"></span>2 · Notes<span class="tick">✓</span></a>
+      <a class="tab" href="#playground" data-v="playground" style="--c: var(--c3)"><span class="dot"></span>3 · Playground<span class="tick">✓</span></a>
+      <a class="tab" href="#quiz" data-v="quiz" style="--c: var(--c4)"><span class="dot"></span>4 · Quiz<span class="tick">✓</span></a>
+      <a class="tab" href="#checkpoint" data-v="checkpoint" style="--c: var(--good)"><span class="dot"></span>5 · Checkpoint<span class="tick">✓</span></a>
+    </nav>
+    <div class="prog"><span id="progTxt">0 of 5 done</span><div class="ring" id="ring"><span id="ringPct">0%</span></div></div>
+  </div>
+</header>
+
+<main>
+<section class="view" id="v-lecture">
+  <span class="eyebrow">Day 6 · 9 min lecture · 2 hours today</span>
+  <h2>Compare your runs, then see the loop at scale</h2>
+  <p class="lead">How to tell a real improvement from luck, and how labs run the same six steps on thousands of GPUs.</p>
+  <div class="lecture">
+    <div>
+      <video id="vid" controls preload="metadata" src="day6_part1.mp4#t=0.6"></video>
+      <p style="color:var(--muted);font-size:14px;margin:8px 0 0">Part <span id="partNo">1</span> of 2 · part 2 starts automatically.</p>
+    </div>
+    <div class="card"><h3 style="margin-bottom:10px">Chapters</h3><div class="chapters" id="chapters"></div></div>
+  </div>
+</section>
+
+<section class="view" id="v-notes">
+  <span class="eyebrow">Day 6 · Notes</span>
+  <h2>Real gain, or luck?</h2>
+  <p class="lead">Two numbers that differ by a couple of points might mean nothing. Today you learn to check, and then zoom out to how RL runs at scale.</p>
+
+  <div class="card note" style="--c: var(--c1)">
+    <div class="head"><div class="num">1</div><h3>One table, same evaluation</h3></div>
+    <p>Re-run your Day 3 evaluation on the v2 model: the <b>same 200 test problems</b>, the <b>same prompt</b>, <b>greedy decoding</b>. Save which problems each run got right (a list of 0s and 1s per run, in the same order). You need that list for the paired test.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Run</th><th>Accuracy</th><th>Format rate</th><th>Avg length</th><th>Precision (hand labels)</th></tr></thead>
+      <tbody><tr><td>baseline (no RL)</td><td></td><td></td><td></td><td>n/a</td></tr><tr><td>run v1 (Day 3)</td><td></td><td></td><td></td><td>Day 4 audit</td></tr><tr><td>run v2 (Day 5)</td><td></td><td></td><td></td><td>label 50 today</td></tr></tbody>
+    </table></div>
+  </div>
+
+  <div class="card note" style="--c: var(--c2)">
+    <div class="head"><div class="num">2</div><h3>Why small gaps can be noise</h3></div>
+    <p>On 200 problems, +2 points is just 4 more correct answers. Changing only the random seed can move a small model by a few points either way. A gap smaller than that wobble is not a finding yet.</p>
+    <p>So don't compare the two totals. Compare <b>question by question</b>. Every question lands in one of four boxes:</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th></th><th>v2 right</th><th>v2 wrong</th></tr></thead>
+      <tbody><tr><td><b>v1 right</b></td><td>both right (tells you nothing)</td><td><b>only v1 right</b></td></tr><tr><td><b>v1 wrong</b></td><td><b>only v2 right</b></td><td>both wrong (tells you nothing)</td></tr></tbody>
+    </table></div>
+    <p>Only the two "only" boxes, the disagreements, carry information about which run is better.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--c3)">
+    <div class="head"><div class="num">3</div><h3>McNemar's test: the coin-flip check</h3></div>
+    <p>If the runs were equally good, each disagreement would be a fair coin flip. The p-value is how often a fair coin gives a split at least as lopsided as yours. Below 0.05 is the usual bar for "probably real".</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>only v1 right</th><th>only v2 right</th><th>p (exact, two-sided)</th><th>Read it as</th></tr></thead>
+      <tbody>
+        <tr><td>6</td><td>14</td><td>0.115</td><td>about 1 in 9 by luck: can't tell</td></tr>
+        <tr><td>10</td><td>20</td><td>0.099</td><td>still can't tell</td></tr>
+        <tr><td>10</td><td>30</td><td>0.002</td><td>about 2 in 1000: real</td></tr>
+      </tbody>
+    </table></div>
+<pre class="code">from math import comb
+def mcnemar_exact(only_a, only_b):
+    n = only_a + only_b
+    if n == 0: <span class="kw">return</span> 1.0
+    k = min(only_a, only_b)
+    <span class="kw">return</span> min(1.0, 2 * sum(comb(n, i) <span class="kw">for</span> i <span class="kw">in</span> range(k + 1)) / 2 ** n)</pre>
+    <p class="note-ill">Recommended reading: Evan Miller, "Adding Error Bars to Evals" (Anthropic, 2024), which argues for exactly this question-level, paired analysis.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--c4)">
+    <div class="head"><div class="num">4</div><h3>Paired bootstrap, and the verdict</h3></div>
+    <p><b>Bootstrap:</b> treat your 200 problems as a bag. Draw 200 at random <i>with repeats</i>, recompute the accuracy gap (v2 − v1) on that draw, and repeat 2,000 times. The middle 95% of those gaps is your interval. If it includes 0, you can't claim a win.</p>
+    <p><b>Read rollouts too.</b> Hand-label 50 answers v2 rewarded. Did precision rise? Did length change? Higher accuracy with a brand-new hack isn't better.</p>
+    <p><b>Verdict:</b> write exactly one of <i>v2 better</i>, <i>v2 worse</i>, or <i>can't tell yet</i>, with the p-value and interval. "Can't tell" is honest and common at this scale. The fix is more problems or more seeds, not a louder claim.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--c5)">
+    <div class="head"><div class="num">5</div><h3>At scale: the same loop, new problems</h3></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Problem</th><th>Why it happens</th><th>What labs do</th></tr></thead>
+      <tbody>
+        <tr><td>Generation is slow</td><td>Tokens come one at a time; reasoning answers run to thousands or tens of thousands of tokens</td><td>Generate with an inference engine (vLLM, SGLang). In TRL: <code>use_vllm=True</code></td></tr>
+        <tr><td>Jobs wait for each other</td><td><b>Colocated</b>: the same GPUs take turns generating and training</td><td><b>Disaggregated</b>: separate GPU pools. TRL: <code>vllm_mode="colocate"</code> or <code>"server"</code></td></tr>
+        <tr><td>Weights must move</td><td>Generators need the newest model after every update</td><td>Fast weight sync between trainer and generators</td></tr>
+        <tr><td>Stragglers</td><td>A synchronous batch waits for its slowest answer</td><td><b>Asynchronous RL</b>: generators never stop</td></tr>
+        <tr><td>Stale answers</td><td>Async answers come from a model 1–2 updates old</td><td>Cap the new/old ratio (like Day 5's clip) so stale data can't push too hard</td></tr>
+        <tr><td>Verifier at scale</td><td>Thousands of checks at once; code can loop forever or cheat</td><td>Sandboxes: sealed containers, time limits, no internet</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="card note" style="--c: var(--good)">
+    <div class="head"><div class="num">6</div><h3>The frameworks</h3></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Framework</th><th>In one line</th><th>When to use it</th></tr></thead>
+      <tbody>
+        <tr><td><b>TRL</b> (Hugging Face)</td><td>Simple trainers; can call vLLM in colocate or server mode</td><td>Learning, one machine, small models</td></tr>
+        <tr><td><b>OpenRLHF</b></td><td>Built on Ray + vLLM + DeepSpeed to spread work across machines</td><td>Multi-GPU and multi-node runs</td></tr>
+        <tr><td><b>verl</b> (ByteDance)</td><td>From the HybridFlow paper; FSDP or Megatron training with vLLM or SGLang rollouts</td><td>Large runs, hundreds of GPUs</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note-ill">These projects change fast. Check each one's docs for current features before choosing.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--c1)">
+    <div class="head"><div class="num">7</div><h3>Deliverables</h3></div>
+<pre class="code" id="tpl"># results/compare_v1_v2.md
+
+| Run | Accuracy | Format | Avg length | Precision (hand) |
+|---|---|---|---|---|
+| baseline | | | | n/a |
+| v1 | | | | |
+| v2 | | | | |
+
+Four boxes: both right __ · both wrong __ · only v1 __ · only v2 __
+McNemar exact p = __      Bootstrap 95% interval for v2 − v1: [__, __]
+Verdict: v2 better / v2 worse / can't tell yet
+Why I think so: ...
+
+# notes/scaling.md
+- Where would my run's time go at 7B with 4k-token answers?
+- Colocated or disaggregated, and why?
+- Which framework would I move to, and what would break first?</pre>
+    <div class="row" style="margin-top:8px"><button class="btn ghost" data-copy="tpl">Copy template</button></div>
+  </div>
+
+  <div class="card note" style="--c: var(--c5)">
+    <div class="head"><div class="num">8</div><h3>Flip cards</h3></div>
+    <div class="flips" id="flips"></div>
+  </div>
+  <div class="card note" style="--c: var(--c3)">
+    <div class="head"><div class="num">9</div><h3>Glossary</h3></div>
+    <input class="gloss-in" id="glossQ" type="search" placeholder="Filter terms…" aria-label="Filter glossary">
+    <dl class="gloss" id="gloss"><div><dt>Noise</dt><dd>Random wobble: numbers that move even when nothing real changed.</dd></div><div><dt>Seed</dt><dd>The starting number for randomness. A different seed gives a slightly different run.</dd></div><div><dt>Paired comparison</dt><dd>Both runs on the same questions, compared one question at a time.</dd></div><div><dt>Disagreement</dt><dd>A question one run got right and the other got wrong.</dd></div><div><dt>McNemar&#x27;s test</dt><dd>Checks if the disagreements split more lopsidedly than coin flips would.</dd></div><div><dt>p-value</dt><dd>How often luck alone would give a result at least this extreme. &lt; 0.05 = probably real.</dd></div><div><dt>Bootstrap</dt><dd>Resample your problems with repeats many times to see how much a number wobbles.</dd></div><div><dt>Throughput</dt><dd>How much work gets done per hour.</dd></div><div><dt>Inference engine</dt><dd>Software built only to generate text fast, e.g. vLLM or SGLang.</dd></div><div><dt>Colocated</dt><dd>Generation and training share the same GPUs and take turns.</dd></div><div><dt>Disaggregated</dt><dd>Separate GPU pools for generation and training.</dd></div><div><dt>Weight sync</dt><dd>Sending the trainer&#x27;s new weights to the generators after each update.</dd></div><div><dt>Straggler</dt><dd>The slowest answer in a batch, which everyone else waits for.</dd></div><div><dt>Asynchronous RL</dt><dd>Generators keep going while the trainer trains; answers are slightly stale.</dd></div><div><dt>Sandbox</dt><dd>A sealed container with time limits and no internet, for running untrusted code.</dd></div></dl>
+    <script>document.getElementById("glossQ").addEventListener("input",function(e){var q=e.target.value.toLowerCase();document.querySelectorAll("#gloss>div").forEach(function(d){d.hidden=q&&d.textContent.toLowerCase().indexOf(q)<0})})</script>
+  </div>
+</section>
+
+<section class="view" id="v-playground">
+  <span class="eyebrow">Day 6 · Playground</span>
+  <h2>Two simulators</h2>
+  <p class="lead">Is your gain real? And how do GPU layouts change the speed of a training step?</p>
+  <div class="pgrid">
+    <div class="card">
+      <h3>Is the gain real?</h3>
+      <div class="ctl"><label for="mA">only v1 right</label><input id="mA" type="range" min="0" max="60" value="6"><output id="mAo">6</output></div>
+      <div class="ctl"><label for="mB">only v2 right</label><input id="mB" type="range" min="0" max="60" value="14"><output id="mBo">14</output></div>
+      <canvas id="binCv" width="640" height="300" style="width:100%;height:auto;border-radius:12px;background:var(--bg-2);margin-top:6px"></canvas>
+      <div class="stats" style="margin-top:12px">
+        <div class="stat">disagreements<b id="mN">–</b></div>
+        <div class="stat">exact p<b id="mP">–</b></div>
+        <div class="stat">verdict<b id="mV">–</b></div>
+      </div>
+      <p class="note-ill" style="margin:0">Red bars: splits at least as lopsided as yours, if each disagreement were a fair coin flip.</p>
+    </div>
+    <div class="card">
+      <h3>GPU layout simulator</h3>
+      <div class="row" style="flex-wrap:wrap;margin-bottom:6px" id="modeBtns">
+        <button class="btn" data-mode="colo">Colocated</button><button class="btn ghost" data-mode="disagg">Disaggregated</button><button class="btn ghost" data-mode="async">Async</button>
+      </div>
+      <div class="ctl"><label for="sG">generate (s)</label><input id="sG" type="range" min="5" max="120" value="60"><output id="sGo">60</output></div>
+      <div class="ctl"><label for="sT">train (s)</label><input id="sT" type="range" min="5" max="120" value="20"><output id="sTo">20</output></div>
+      <div class="ctl"><label for="sS">straggler ×</label><input id="sS" type="range" min="1" max="4" step="0.1" value="1.5"><output id="sSo">1.5</output></div>
+      <div class="ctl"><label for="sW">weight sync (s)</label><input id="sW" type="range" min="0" max="30" value="5"><output id="sWo">5</output></div>
+      <canvas id="simCv" width="640" height="230" style="width:100%;height:auto;border-radius:12px;background:var(--bg-2);margin-top:6px"></canvas>
+      <div class="stats" style="margin-top:12px">
+        <div class="stat">seconds / step<b id="sStep">–</b></div>
+        <div class="stat">steps / hour<b id="sHr">–</b></div>
+        <div class="stat">GPU busy<b id="sBusy">–</b></div>
+      </div>
+      <p class="note-ill" style="margin:0">A toy model: the slowest answer takes "straggler ×" the typical time. Disaggregated and async use separate GPU pools for generating and training.</p>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="v-quiz">
+  <span class="eyebrow">Day 6 · Quiz</span>
+  <h2>10 questions. Score 8+ to pass.</h2>
+  <p class="lead">Multiple choice plus three you compute yourself.</p>
+  <div class="qwrap card" id="quiz"></div>
+</section>
+
+<section class="view" id="v-checkpoint">
+  <span class="eyebrow">Day 6 · Checkpoint</span>
+  <h2>Compare honestly, think at scale</h2>
+  <p class="lead">Four functions, a filled-in comparison, and a short scaling note. Send me your results file and test output.</p>
+  <div class="grid2">
+    <div class="card">
+      <h3>Tasks</h3>
+      <ol>
+        <li>Evaluate run v2 exactly like run v1, and save per-problem 0/1 results for both.</li>
+        <li>Write <code>eval/compare_runs.py</code> with:
+          <ul>
+            <li><code>flips(a, b)</code>: dict with <code>both_right</code>, <code>both_wrong</code>, <code>only_a</code>, <code>only_b</code>; <code>ValueError</code> if lengths differ</li>
+            <li><code>mcnemar_exact(only_a, only_b)</code>: two-sided exact p; 1.0 when there are no disagreements</li>
+            <li><code>paired_bootstrap(a, b, n_boot=2000, seed=0, level=0.95)</code>: <code>(lo, hi)</code> for mean(b) − mean(a), resampling questions with <code>random.Random(seed)</code>; <code>ValueError</code> on empty input</li>
+            <li><code>verdict(a, b, alpha=0.05)</code>: <code>"B better"</code>, <code>"B worse"</code> or <code>"can't tell"</code></li>
+          </ul>
+        </li>
+        <li>Pass the 20 tests on the right.</li>
+        <li>Fill in <code>results/compare_v1_v2.md</code> and <code>notes/scaling.md</code>.</li>
+      </ol>
+      <h3 style="margin-top:14px">Your checklist</h3>
+      <div class="checks">
+        <label><input type="checkbox" id="c1"> v2 evaluated, per-problem results saved</label>
+        <label><input type="checkbox" id="c2"> 20 tests pass</label>
+        <label><input type="checkbox" id="c3"> Comparison and verdict written</label>
+        <label><input type="checkbox" id="c4"> Results sent to Claude</label>
+      </div>
+    </div>
+    <div>
+      <p style="margin-top:0"><b>Tests</b>: save as <code>eval/test_compare_runs.py</code>, run <code>pytest</code>.</p>
+      <div class="codebox"><button class="btn" data-copy="tests">Copy</button><pre class="code" id="tests" style="max-height:640px"></pre></div>
+      <p class="note-ill">Checked against a reference solution: all 20 pass. Versions that forget to double the tail, drop the k term, mix up the boxes, skip resampling, never say "can't tell", or flip the sign of the gap each fail at least one.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="site-foot"><div class="in"><span>RLE Lab · Kanishk Singh Parihar · Day 6 of 7</span><a href="../../index.html">Back to the roadmap</a></div></footer>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const store = { get: (k, d) => window.RLE.store.get("d6-" + k, d), set: (k, v) => window.RLE.store.set("d6-" + k, v) };
+const CSS = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+const VIEWS = ["lecture", "notes", "playground", "quiz", "checkpoint"];
+let done = store.get("done", {});
+function mark(v) { if (!done[v]) { done[v] = true; store.set("done", done); paintProg(); } }
+function paintProg() { const n = VIEWS.filter(v => done[v]).length; $("#progTxt").textContent = `${n} of 5 done`; $("#ring").style.setProperty("--p", n * 20); $("#ringPct").textContent = n * 20 + "%"; $$(".tab").forEach(t => t.classList.toggle("done", !!done[t.dataset.v])); }
+function route() {
+  const h = location.hash.slice(1), v = VIEWS.includes(h) ? h : "lecture";
+  $$(".view").forEach(s => s.classList.toggle("on", s.id === "v-" + v));
+  $$(".tab").forEach(t => { if (t.dataset.v === v) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current"); });
+  if (v === "notes") setTimeout(() => mark("notes"), 20000);
+  window.scrollTo({ top: 0 });
+}
+addEventListener("hashchange", route);
+
+const CH = [["Intro", 0.0], ["Words you need", 39.8], ["One table, same evaluation", 67.4], ["Is +2 points real?", 91.6], ["Question by question", 113.1], ["The coin-flip check", 138.1], ["Paired bootstrap", 169.1], ["Read the rollouts", 193.1], ["An honest verdict", 211.9], ["Same loop, thousands of GPUs", 232.1], ["Where the time goes", 253.0], ["Inference engines", 274.0], ["Colocated vs disaggregated", 297.2], ["Weight sync", 326.0], ["Stragglers", 346.1], ["Asynchronous RL", 364.4], ["Sandboxes", 397.2], ["The frameworks", 422.8], ["What transfers", 448.2], ["Recap", 468.3], ["Your checkpoint", 492.5]];
+const PARTS = [["day6_part1.mp4", 0], ["day6_part2.mp4", 274.0]], TOTAL = 518.0;
+const vid = $("#vid"); let part = 0;
+const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+function loadPart(i, at = 0, play = false) { if (part !== i) { part = i; vid.src = PARTS[i][0]; $("#partNo").textContent = i + 1; } const go = () => { vid.currentTime = at; if (play) vid.play().catch(() => {}); }; if (vid.readyState >= 1) go(); else vid.addEventListener("loadedmetadata", go, { once: true }); }
+function seekGlobal(t) { const i = t >= PARTS[1][1] ? 1 : 0; loadPart(i, t - PARTS[i][1], true); }
+$("#chapters").innerHTML = CH.map(([n, t]) => `<button class="chap" data-t="${t}"><time>${fmt(t)}</time><span>${n}</span></button>`).join("");
+$$(".chap").forEach(b => b.addEventListener("click", () => seekGlobal(+b.dataset.t)));
+vid.addEventListener("ended", () => { if (part === 0) loadPart(1, 0, true); else mark("lecture"); });
+vid.addEventListener("timeupdate", () => { const t = PARTS[part][1] + vid.currentTime; let cur = 0; CH.forEach(([, s], i) => { if (t >= s) cur = i; }); $$(".chap").forEach((b, i) => b.classList.toggle("now", i === cur)); if (t / TOTAL > 0.9) mark("lecture"); });
+
+/* ---- math ---- */
+function comb(n, k) { let r = 1; for (let i = 1; i <= k; i++) r = r * (n - k + i) / i; return r; }
+function mcnemar(a, b) { const n = a + b; if (!n) return 1; const k = Math.min(a, b); let s = 0; for (let i = 0; i <= k; i++) s += comb(n, i); return Math.min(1, 2 * s / Math.pow(2, n)); }
+
+/* flip cards */
+const FL = [["+2 points on 200", "noise?", "Only 4 more answers. Could be seed wobble. Check before claiming.", "--c2"],
+  ["Four boxes", "paired", "Both right, both wrong, only v1, only v2. Only the 'only' boxes count.", "--c1"],
+  ["McNemar p", "test", "How often a fair coin gives a split this lopsided. < 0.05 = probably real.", "--c3"],
+  ["Bootstrap", "interval", "Resample the 200 problems 2,000 times. If the middle 95% includes 0, no win.", "--c4"],
+  ["Can't tell", "verdict", "An honest result. Fix: more problems or seeds.", "--good"],
+  ["Bottleneck", "scale", "Generating text, one token at a time. Training is quick by comparison.", "--c5"],
+  ["Colocated vs disaggregated", "layout", "Same GPUs take turns vs separate pools for generation and training.", "--c1"],
+  ["Async RL", "scale", "Generators never stop. Cost: answers from a slightly older model.", "--c2"]];
+$("#flips").innerHTML = FL.map(([f, k, b, c]) => `<button class="flip" style="--c: var(${c})" aria-label="${esc(f)}: flip to reveal"><div class="in"><div class="f">${esc(f)}<small>${k} · tap to flip</small></div><div class="bk">${esc(b)}</div></div></button>`).join("");
+$$(".flip").forEach(b => b.onclick = () => b.classList.toggle("on"));
+
+/* is the gain real */
+const bc = $("#binCv"), bg = bc.getContext("2d");
+function gainLab() {
+  const a = +$("#mA").value, b = +$("#mB").value, n = a + b, p = mcnemar(a, b);
+  $("#mAo").textContent = a; $("#mBo").textContent = b; $("#mN").textContent = n; $("#mP").textContent = n ? (p < 0.001 ? p.toExponential(1) : p.toFixed(3)) : "–";
+  const v = !n || p >= 0.05 ? "can't tell" : (b > a ? "v2 better" : "v2 worse");
+  $("#mV").textContent = v; $("#mV").style.color = v === "can't tell" ? CSS("--c4") : (v === "v2 better" ? CSS("--good") : CSS("--bad"));
+  const W = bc.width, H = bc.height; bg.clearRect(0, 0, W, H); if (!n) return;
+  const ps = []; for (let i = 0; i <= n; i++) ps.push(comb(n, i) / Math.pow(2, n));
+  const mx = Math.max(...ps), bw = (W - 40) / (n + 1), lo = Math.min(a, b), hi = Math.max(a, b);
+  ps.forEach((q, i) => { const h = (H - 50) * q / mx; bg.fillStyle = (i <= lo || i >= hi) ? CSS("--bad") : CSS("--c1"); bg.globalAlpha = (i <= lo || i >= hi) ? 0.9 : 0.55; bg.fillRect(20 + i * bw + 1, H - 30 - h, Math.max(1, bw - 2), h); });
+  bg.globalAlpha = 1; const xk = 20 + b * bw + bw / 2; bg.strokeStyle = CSS("--ink"); bg.lineWidth = 3; bg.beginPath(); bg.moveTo(xk, 10); bg.lineTo(xk, H - 30); bg.stroke();
+  bg.fillStyle = CSS("--muted"); bg.font = "18px IBM Plex Mono, monospace"; bg.textAlign = "left"; bg.fillText("0", 20, H - 8); bg.textAlign = "right"; bg.fillText(String(n), W - 20, H - 8);
+  bg.fillStyle = CSS("--ink"); const lab = `v2 wins: ${b}`; if (xk > W - 160) { bg.textAlign = "right"; bg.fillText(lab, xk - 8, 26); } else { bg.textAlign = "left"; bg.fillText(lab, xk + 8, 26); }
+}
+["#mA", "#mB"].forEach(s => $(s).addEventListener("input", () => { gainLab(); mark("playground"); }));
+document.addEventListener("themechange", gainLab); gainLab();
+
+/* GPU layout simulator */
+let mode = "colo";
+const sc = $("#simCv"), sg = sc.getContext("2d");
+function simLab() {
+  const G = +$("#sG").value, Tt = +$("#sT").value, S = +$("#sS").value, Wt = +$("#sW").value;
+  ["sG", "sT", "sS", "sW"].forEach(id => $("#" + id + "o").textContent = $("#" + id).value);
+  const gen = G * S; let step, busy;
+  if (mode === "colo") { step = gen + Tt; busy = (G + Tt) / step; }
+  else if (mode === "disagg") { step = gen + Wt + Tt; busy = (G / step + Tt / step) / 2; }
+  else { step = Math.max(gen, Tt) + Wt; busy = (G / step + Tt / step) / 2; }
+  $("#sStep").textContent = step.toFixed(0); $("#sHr").textContent = (3600 / step).toFixed(1); $("#sBusy").textContent = Math.round(busy * 100) + "%";
+  const Wd = sc.width, H = sc.height; sg.clearRect(0, 0, Wd, H);
+  const span = 3 * Math.max(step, gen + Tt + Wt), X = t => 110 + (Wd - 130) * t / span;
+  const pink = CSS("--c2"), green = CSS("--good"), amb = CSS("--c4"), mut = CSS("--muted");
+  const bar = (y, s, e, col, lab) => { sg.fillStyle = col; sg.fillRect(X(s), y, Math.max(2, X(e) - X(s) - 2), 34); if (lab && X(e) - X(s) > 40) { sg.fillStyle = "#111"; sg.font = "15px IBM Plex Sans, sans-serif"; sg.textAlign = "center"; sg.fillText(lab, (X(s) + X(e)) / 2, y + 22); } };
+  sg.fillStyle = mut; sg.font = "18px IBM Plex Sans, sans-serif"; sg.textAlign = "left";
+  if (mode === "colo") {
+    sg.fillText("all GPUs", 8, 92);
+    for (let i = 0; i < 3; i++) { const t0 = i * step; bar(70, t0, t0 + G, pink, "gen"); bar(70, t0 + G, t0 + gen, pink + "55", ""); bar(70, t0 + gen, t0 + gen + Tt, green, "train"); }
+  } else {
+    sg.fillText("generators", 8, 52); sg.fillText("trainer", 8, 132);
+    for (let i = 0; i < 3; i++) {
+      if (mode === "disagg") { const t0 = i * step; bar(30, t0, t0 + G, pink, "gen"); bar(30, t0 + G, t0 + gen, pink + "55", ""); bar(110, t0 + gen, t0 + gen + Wt, amb, ""); bar(110, t0 + gen + Wt, t0 + step, green, "train"); }
+      else { const t0 = i * step; bar(30, t0, t0 + G, pink, "gen " + (i + 1)); bar(30, t0 + G, t0 + gen, pink + "55", ""); if (i < 3) { bar(110, t0 + Math.max(gen, 0), t0 + Math.max(gen, 0) + Wt, amb, ""); bar(110, t0 + gen + Wt, t0 + gen + Wt + Tt, green, "train " + (i + 1)); } }
+    }
+  }
+  sg.textAlign = "left"; sg.font = "17px IBM Plex Sans, sans-serif"; sg.fillStyle = mut; sg.fillText("faded = waiting on the straggler · amber = weight sync", 8, H - 14);
+}
+$$("#modeBtns [data-mode]").forEach(b => b.onclick = () => { mode = b.dataset.mode; $$("#modeBtns [data-mode]").forEach(x => x.classList.toggle("ghost", x !== b)); simLab(); mark("playground"); });
+["#sG", "#sT", "#sS", "#sW"].forEach(s => $(s).addEventListener("input", () => { simLab(); mark("playground"); }));
+document.addEventListener("themechange", simLab); simLab();
+
+/* quiz */
+const Q = [
+  { q: "Run v2 scores 2 points higher than v1 on the same 200 problems. The best first conclusion?", o: ["v2 is better", "It might be noise: check question by question", "v1 is better", "The eval is broken"], a: 1, e: "Two points is four answers. Seeds alone can move that much." },
+  { q: "In McNemar's test, which questions carry information?", o: ["All 200", "Only those both runs got right", "Only those where the runs disagree", "Only those both got wrong"], a: 2, e: "Questions where both agree say nothing about which run is better." },
+  { num: true, q: "v2 won 14 disagreements and lost 6. How many disagreements are there in total?", ans: 20, tol: 0.01, e: "14 + 6 = 20.", fmt: 0 },
+  { num: true, q: "On 200 problems, v2 has 8 more correct answers than v1. What is the gain in accuracy points?", ans: 4, tol: 0.01, e: "8 / 200 = 4%.", fmt: 0 },
+  { num: true, q: "Exact two-sided McNemar p for 5 wins and 0 losses? (3 decimals)", ans: 0.0625, tol: 0.001, e: "2 × (1/2)^5 = 0.0625. Even 5-0 isn't below 0.05: too few disagreements.", fmt: 3 },
+  { q: "Your paired bootstrap 95% interval for v2 − v1 is −0.3 to +8.3 points. You should say…", o: ["v2 is clearly better", "Can't claim a win: the interval includes 0", "v2 is worse", "The bootstrap failed"], a: 1, e: "If 0 is a plausible gap, there's no confirmed win." },
+  { q: "In RL for reasoning models, most of the wall-clock time goes to…", o: ["The backward pass", "Generating rollouts", "Loading data", "Computing advantages"], a: 1, e: "Tokens come one at a time, and reasoning answers are long." },
+  { q: "'Colocated' means…", o: ["Generation and training share the same GPUs and take turns", "Separate GPU pools for each", "Training on CPUs", "Two copies of the dataset"], a: 0, e: "Simple and fits on one GPU, but the two jobs wait for each other. TRL: vllm_mode=\"colocate\"." },
+  { q: "The straggler problem is…", o: ["Slow data loading", "A synchronous batch waiting for its slowest answer", "A bug in vLLM", "Too many GPUs"], a: 1, e: "One very long answer can leave hundreds of GPUs idle." },
+  { q: "The main cost of asynchronous RL?", o: ["It needs no verifier", "Answers come from a slightly older model, so updates need correcting", "It can't use vLLM", "It doubles the dataset"], a: 1, e: "Systems cap the new/old ratio so stale answers can't push too hard." }
+];
+let qi = 0, score = 0, answered = false, best = store.get("best", 0);
+function renderQ() {
+  const box = $("#quiz");
+  if (qi >= Q.length) {
+    const pass = score >= 8; best = Math.max(best, score); store.set("best", best); if (pass) { mark("quiz"); burst(); }
+    box.innerHTML = `<div class="score"><div class="big">${score}/${Q.length}</div><h3>${pass ? "Passed. Nice work." : "Not yet: 8 to pass."}</h3><p style="color:var(--muted)">Best so far: ${best}/${Q.length}.</p><div class="row" style="justify-content:center"><button class="btn ghost" id="retry">Retry quiz</button>${pass ? '<a class="btn good" href="#checkpoint">Go to checkpoint</a>' : ""}</div></div>`;
+    $("#retry").onclick = () => { qi = 0; score = 0; renderQ(); }; return;
+  }
+  const it = Q[qi]; answered = false;
+  if (!it.num) it.ord = it.o.map((_, i) => i).sort(() => Math.random() - .5);
+  box.innerHTML = `<div class="qhead"><span class="pill">Question ${qi + 1} of ${Q.length}</span><div class="qbar"><i style="width:${qi / Q.length * 100}%"></i></div><b style="font-variant-numeric:tabular-nums">${score} pts</b></div>
+    <h3 style="font-size:23px">${esc(it.q)}</h3>
+    ${it.num ? `<form class="numin" id="numf"><label for="numv" class="sr">Your answer</label><input id="numv" inputmode="decimal" placeholder="e.g. 0.50" autocomplete="off"><button class="btn">Check</button></form>` : `<div class="opts">${it.ord.map((oi, k) => `<button class="opt" data-i="${oi}">${String.fromCharCode(65 + k)}. ${esc(it.o[oi])}</button>`).join("")}</div>`}
+    <div id="fbox"></div>`;
+  if (it.num) { $("#numv").focus(); $("#numf").onsubmit = e => { e.preventDefault(); if (answered) return; const v = parseFloat($("#numv").value.replace(",", ".")); if (isNaN(v)) { $("#fbox").innerHTML = `<div class="fb" style="--c:var(--c4)">Type a number, like 0.50.</div>`; return; } finish(Math.abs(v - it.ans) <= it.tol); }; }
+  else $$(".opt").forEach(b => b.onclick = () => { if (answered) return; const i = +b.dataset.i; $$(".opt").forEach(x => { x.disabled = true; if (+x.dataset.i === it.a) x.classList.add("right"); }); if (i !== it.a) b.classList.add("wrong"); finish(i === it.a); });
+}
+function finish(ok) {
+  answered = true; const it = Q[qi]; if (ok) score++;
+  $("#fbox").innerHTML = `<div class="fb" style="--c:var(${ok ? "--good" : "--bad"})"><b>${ok ? "Correct." : "Not quite."}</b> ${it.num ? `Answer: ${it.ans.toFixed(it.fmt ?? 2)}. ` : ""}${esc(it.e)}</div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" id="next">${qi + 1 < Q.length ? "Next question" : "See score"}</button></div>`;
+  if (ok && !reduce) burst(40); $("#next").focus(); $("#next").onclick = () => { qi++; renderQ(); };
+}
+renderQ();
+
+const cc = $("#confetti"), cx2 = cc.getContext("2d"); let bits = [];
+function burst(n = 160) { if (reduce) return; cc.width = innerWidth; cc.height = innerHeight; const cols = ["--c1", "--c2", "--c3", "--c4", "--good"].map(CSS); const start = !bits.length; for (let i = 0; i < n; i++) bits.push({ x: innerWidth / 2, y: innerHeight / 3, vx: (Math.random() - .5) * 16, vy: Math.random() * -14 - 4, c: cols[i % 5], life: 120 }); if (start) loopConf(); }
+function loopConf() { cx2.clearRect(0, 0, cc.width, cc.height); bits.forEach(b => { b.x += b.vx; b.y += b.vy; b.vy += .45; b.life--; cx2.fillStyle = b.c; cx2.fillRect(b.x, b.y, 8, 5); }); bits = bits.filter(b => b.life > 0); if (bits.length) requestAnimationFrame(loopConf); else cx2.clearRect(0, 0, cc.width, cc.height); }
+
+const TESTS = "import pytest\nfrom compare_runs import flips, mcnemar_exact, paired_bootstrap, verdict\n\ndef run(both_right, both_wrong, only_a, only_b):\n    a = [1] * both_right + [0] * both_wrong + [1] * only_a + [0] * only_b\n    b = [1] * both_right + [0] * both_wrong + [0] * only_a + [1] * only_b\n    return a, b\n\ndef test_flips_counts():\n    a, b = run(150, 30, 6, 14)\n    assert flips(a, b) == {\"both_right\": 150, \"both_wrong\": 30, \"only_a\": 6, \"only_b\": 14}\ndef test_flips_accepts_bools():\n    assert flips([True, False], [True, True]) == {\"both_right\": 1, \"both_wrong\": 0, \"only_a\": 0, \"only_b\": 1}\ndef test_flips_length_mismatch():\n    with pytest.raises(ValueError): flips([1, 0], [1])\ndef test_flips_total():\n    a, b = run(10, 5, 3, 2); assert sum(flips(a, b).values()) == 20\n\ndef test_mcnemar_14_6():        assert abs(mcnemar_exact(6, 14) - 0.11532) < 1e-4\ndef test_mcnemar_30_10():       assert abs(mcnemar_exact(10, 30) - 0.00222) < 1e-4\ndef test_mcnemar_symmetric():   assert mcnemar_exact(4, 12) == mcnemar_exact(12, 4)\ndef test_mcnemar_equal_is_one():assert mcnemar_exact(7, 7) == 1.0\ndef test_mcnemar_no_flips():    assert mcnemar_exact(0, 0) == 1.0\ndef test_mcnemar_one_sided_tail(): assert abs(mcnemar_exact(0, 5) - 0.0625) < 1e-9\n\ndef test_bootstrap_contains_gap():\n    a, b = run(150, 30, 6, 14); lo, hi = paired_bootstrap(a, b)\n    assert lo <= 0.04 <= hi\ndef test_bootstrap_includes_zero_for_small_gain():\n    a, b = run(150, 30, 6, 14); lo, hi = paired_bootstrap(a, b); assert lo <= 0 <= hi\ndef test_bootstrap_excludes_zero_for_big_gain():\n    a, b = run(130, 30, 10, 30); lo, hi = paired_bootstrap(a, b); assert lo > 0\ndef test_bootstrap_deterministic():\n    a, b = run(50, 20, 5, 9); assert paired_bootstrap(a, b, seed=3) == paired_bootstrap(a, b, seed=3)\ndef test_bootstrap_identical_runs():\n    a = [1, 0, 1, 1, 0] * 10; assert paired_bootstrap(a, a) == (0.0, 0.0)\ndef test_bootstrap_rejects_empty():\n    with pytest.raises(ValueError): paired_bootstrap([], [])\n\ndef test_verdict_cant_tell():   assert verdict(*run(150, 30, 6, 14)) == \"can't tell\"\ndef test_verdict_better():      assert verdict(*run(130, 30, 10, 30)) == \"B better\"\ndef test_verdict_worse():       assert verdict(*run(130, 30, 30, 10)) == \"B worse\"\ndef test_verdict_identical():   assert verdict([1, 0, 1], [1, 0, 1]) == \"can't tell\"\n";
+function hl(src) { return src.split("\n").map(line => { const ci = line.indexOf("#"); let code = ci >= 0 ? line.slice(0, ci) : line, cm = ci >= 0 ? line.slice(ci) : ""; code = esc(code).replace(/\b(import|from|def|assert|and|is|None|return|for|in|with|lambda)\b/g, '<span class="kw">$1</span>').replace(/\b(flips|mcnemar_exact|paired_bootstrap|verdict|run|test_\w+|abs|all|sum|replace)\b/g, '<span class="fn">$1</span>'); return code + (cm ? `<span class="cm">${esc(cm)}</span>` : ""); }).join("\n"); }
+$("#tests").innerHTML = hl(TESTS);
+$$("[data-copy]").forEach(b => b.onclick = async () => { const t = b.dataset.copy === "tests" ? TESTS : $("#tpl").textContent; const lab = b.textContent; try { await navigator.clipboard.writeText(t); b.textContent = "Copied"; } catch (e) { b.textContent = "Select and copy"; } setTimeout(() => b.textContent = lab, 1800); });
+let ck = store.get("checks", {});
+["c1", "c2", "c3", "c4"].forEach(id => { const c = $("#" + id); c.checked = !!ck[id]; c.onchange = () => { ck[id] = c.checked; store.set("checks", ck); if (ck.c1 && ck.c2 && ck.c3) mark("checkpoint"); }; });
+
+paintProg(); route();
+});
+</script>
+</body>
+</html>
