@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 4 · Break Your Verifier · RLE Lab</title>
+<meta name="author" content="Kanishk Singh Parihar">
+<script>(function(){var t=null;try{t=localStorage.getItem("rle-theme")}catch(e){}if(!t){try{t=JSON.parse(window.name||"{}")["rle-theme"]}catch(e){}}if(t&&t!=="system")document.documentElement.setAttribute("data-mode",t)})()</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="stylesheet" href="../../assets/day.css">
+<script src="../../assets/site.js" defer></script>
+<style>
+.pgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; }
+.ctl { display: grid; grid-template-columns: 170px 1fr 64px; gap: 10px; align-items: center; margin: 8px 0; }
+.ctl output { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+.arena textarea, .arena input { width: 100%; font-family: var(--mono); font-size: 15px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.vs2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.vbox { border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: var(--surface-2); text-align: center; }
+.vbox small { color: var(--muted); font-weight: 700; }
+.vbox .big2 { font-family: var(--display); font-size: 44px; font-weight: 800; line-height: 1.1; }
+.flag { margin-top: 10px; padding: 10px 12px; border-radius: 12px; font-weight: 600; border-left: 5px solid var(--c); background: var(--surface-2); }
+.ci { position: relative; height: 54px; margin: 16px 0 6px; border-radius: 10px; background: var(--bg-2); }
+.ci .band { position: absolute; top: 18px; height: 18px; border-radius: 9px; background: var(--c2); opacity: .55; }
+.ci .pt { position: absolute; top: 12px; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); transform: translateX(-50%); border: 3px solid var(--surface); }
+.ci .ax { position: absolute; bottom: -20px; font-size: 12px; color: var(--muted); transform: translateX(-50%); }
+.ok1 { color: var(--good); font-weight: 700; } .bad1 { color: var(--bad); font-weight: 700; }
+.note-ill { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<canvas id="confetti" aria-hidden="true"></canvas>
+<header class="site-header">
+  <div class="site-bar">
+    <a class="brand" href="../../index.html"><span class="mark" aria-hidden="true"></span>RLE Lab</a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="../../index.html">Roadmap</a>
+      <a href="../day1/index.html">Day 1</a>
+      <a href="../day2/index.html">Day 2</a>
+      <a href="../day3/index.html">Day 3</a>
+      <a href="index.html" aria-current="page">Day 4</a>
+    </nav>
+    <button class="theme-btn" data-theme-btn type="button">Theme</button>
+  </div>
+  <div class="daybar">
+    <nav class="tabs" aria-label="Day 4 sections">
+      <a class="tab" href="#lecture" data-v="lecture" style="--c: var(--c1)"><span class="dot"></span>1 · Lecture<span class="tick">✓</span></a>
+      <a class="tab" href="#notes" data-v="notes" style="--c: var(--c2)"><span class="dot"></span>2 · Notes<span class="tick">✓</span></a>
+      <a class="tab" href="#playground" data-v="playground" style="--c: var(--c3)"><span class="dot"></span>3 · Playground<span class="tick">✓</span></a>
+      <a class="tab" href="#quiz" data-v="quiz" style="--c: var(--c4)"><span class="dot"></span>4 · Quiz<span class="tick">✓</span></a>
+      <a class="tab" href="#checkpoint" data-v="checkpoint" style="--c: var(--good)"><span class="dot"></span>5 · Checkpoint<span class="tick">✓</span></a>
+    </nav>
+    <div class="prog"><span id="progTxt">0 of 5 done</span><div class="ring" id="ring"><span id="ringPct">0%</span></div></div>
+  </div>
+</header>
+
+<main>
+<section class="view" id="v-lecture">
+  <span class="eyebrow">Day 4 · 6 min lecture · 5 hours today</span>
+  <h2>Break your own verifier</h2>
+  <p class="lead">Attack your verifier the way a model would, measure how often it's fooled, close the holes, and write the audit.</p>
+  <div class="lecture">
+    <div>
+      <video id="vid" controls preload="metadata" src="day4_part1.mp4#t=0.6"></video>
+      <p style="color:var(--muted);font-size:14px;margin:8px 0 0">Part <span id="partNo">1</span> of 2 · part 2 starts automatically.</p>
+    </div>
+    <div class="card"><h3 style="margin-bottom:10px">Chapters</h3><div class="chapters" id="chapters"></div></div>
+  </div>
+</section>
+
+<section class="view" id="v-notes">
+  <span class="eyebrow">Day 4 · Notes</span>
+  <h2>Find the holes before the model does</h2>
+  <p class="lead">A model sampling thousands of answers finds verifier holes by accident. Your job today is to find them first, on purpose.</p>
+
+  <div class="card note" style="--c: var(--bad)">
+    <div class="head"><div class="num">1</div><h3>Reward hacking</h3></div>
+    <p>The model raises its reward without doing the task you meant. Not cleverness or malice: RL pushes probability toward whatever scores well, shortcuts included. The defence is a verifier with fewer shortcuts.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Setting</th><th>What gets learned</th><th>The verifier's mistake</th></tr></thead>
+      <tbody>
+        <tr><td>Coding agent</td><td>Edit the tests instead of fixing the code</td><td>"Tests pass" without protecting the tests</td></tr>
+        <tr><td>Summariser</td><td>Copy the source</td><td>Similarity score rewards overlap</td></tr>
+        <tr><td>Chat model</td><td>Longer and longer answers</td><td>The judge prefers length</td></tr>
+        <tr><td>Your math verifier</td><td><code>&lt;answer&gt;7 2&lt;/answer&gt;</code> scores 1.0</td><td>Normalising deleted inner spaces</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note-ill">Further reading: Lilian Weng, "Reward Hacking in Reinforcement Learning" (Nov 2024).</p>
+  </div>
+
+  <div class="card note" style="--c: var(--c1)">
+    <div class="head"><div class="num">2</div><h3>Audit with hand labels</h3></div>
+    <ol>
+      <li>Take <b>100 completions your verifier rewarded</b> during Day 3. Label each: truly correct? <b>Precision</b> = truly correct ÷ 100.</li>
+      <li>Take <b>50 that scored zero</b>. Count the right answers it missed. <b>Missed-answer rate</b> = missed ÷ 50.</li>
+      <li>Report each with an interval. With k false positives in n labels, the 95% Wilson interval tells you how sure you are (try it in the Playground). 20 labels give a wide range; 100 give a useful one.</li>
+    </ol>
+  </div>
+
+  <div class="card note" style="--c: var(--c3)">
+    <div class="head"><div class="num">3</div><h3>The attack catalog, run live against v1 and v2</h3></div>
+    <p>Gold answer 72 unless noted. Both columns are computed in your browser with the same rules as the Day 2 verifier (v1) and today's reference v2.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Attack</th><th>Completion</th><th>v1</th><th>v2</th></tr></thead>
+      <tbody id="catRows"></tbody>
+    </table></div>
+  </div>
+
+  <div class="card note" style="--c: var(--c4)">
+    <div class="head"><div class="num">4</div><h3>Three holes in v1, and the rule that closes each</h3>
+    </div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Hole</th><th>Why v1 accepted it</th><th>v2 rule</th></tr></thead>
+      <tbody>
+        <tr><td><code>7 2</code></td><td>normalize removed every space</td><td>Strip only outside spaces</td></tr>
+        <tr><td><code>1,2,5,0</code> · <code>$$72</code></td><td>removed every comma and every $</td><td>Commas only in groups of 3; at most one leading $</td></tr>
+        <tr><td>full-width <code>７２</code></td><td>Python's <code>\d</code> matches Unicode digits, and <code>Decimal</code> accepts them</td><td>ASCII digits only (<code>re.ASCII</code>)</td></tr>
+      </tbody>
+    </table></div>
+<pre class="code" style="margin-top:12px">NUM = re.compile(r"^-?\$?(\d{1,3}(,\d{3})+|\d+)(\.\d+)?$", re.ASCII)
+
+def normalize(s):
+    if s is None: <span class="kw">return</span> None
+    s = s.strip()                         <span class="cm"># outside spaces only</span>
+    if not NUM.match(s): <span class="kw">return</span> None
+    <span class="kw">return</span> Decimal(s.replace("$", "").replace(",", ""))</pre>
+  </div>
+
+  <div class="card note" style="--c: var(--c2)">
+    <div class="head"><div class="num">5</div><h3>The trade, and the limit</h3></div>
+    <p><b>Trade:</b> strict rules cost recall. <code>1 000</code> with a space, or full-width digits, now score 0 even when right. A missed right answer wastes a little signal; a rewarded wrong one teaches the wrong lesson. Choose on purpose and write it down.</p>
+    <p><b>Limit:</b> an answer-only verifier can't tell a lucky guess from real reasoning. Nonsense steps followed by <code>&lt;answer&gt;72&lt;/answer&gt;</code> still score 1.0. Fixing that needs process checks or a judge that reads the reasoning, each gameable in its own way. Week 2 material.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--good)">
+    <div class="head"><div class="num">6</div><h3>Audit report template</h3></div>
+<pre class="code" id="tpl"># Verifier audit (Day 4)
+
+## Attacks
+- Catalog size: __ attacks (each with expected reward)
+- Fooled v1: __ / __      Fooled v2: __ / __
+- Holes found: ...
+
+## Hand labels (Day 3 rollouts)
+- Precision (100 rewarded): __%  (95% CI __–__%)
+- Missed-answer rate (50 zero-reward): __%
+
+## Rules and why
+- Exactly one answer tag, else 0: ...
+- Outside spaces only: ...
+- Commas only in groups of 3, one leading $: ...
+- ASCII digits only: ...
+
+## Known limits
+- Answer-only: can't detect lucky guesses</pre>
+    <div class="row" style="margin-top:8px"><button class="btn ghost" data-copy="tpl">Copy template</button></div>
+  </div>
+
+  <div class="card note" style="--c: var(--c5)">
+    <div class="head"><div class="num">7</div><h3>Flip cards</h3></div>
+    <div class="flips" id="flips"></div>
+  </div>
+</section>
+
+<section class="view" id="v-playground">
+  <span class="eyebrow">Day 4 · Playground</span>
+  <h2>Red-team arena</h2>
+  <p class="lead">Write completions that try to earn reward without being a clean right answer. Each one runs against v1 and v2. Then size your hand-label audit.</p>
+  <div class="pgrid">
+    <div class="card arena">
+      <h3>Attack the verifiers</h3>
+      <label for="aComp" style="font-weight:600;font-size:14px;color:var(--muted)">Completion</label>
+      <textarea id="aComp" rows="3">&lt;answer&gt;7 2&lt;/answer&gt;</textarea>
+      <label for="aGold" style="font-weight:600;font-size:14px;color:var(--muted);display:block;margin-top:8px">Gold answer</label>
+      <input id="aGold" type="text" value="#### 72">
+      <div class="vs2">
+        <div class="vbox"><small>v1 (Day 2)</small><div class="big2" id="r1">–</div></div>
+        <div class="vbox"><small>v2 (today)</small><div class="big2" id="r2">–</div></div>
+      </div>
+      <div class="flag" id="aFlag" style="--c: var(--c3)"></div>
+      <p style="margin:12px 0 0">Holes found that fool v1 but not v2: <b id="aCount">0</b></p>
+      <p class="note-ill" style="margin:4px 0 0">Counts distinct completions you submit with "Log as attack". Only log things a careful grader would call wrong or not a clean answer.</p>
+      <div class="row" style="margin-top:8px"><button class="btn" id="aLog">Log as attack</button><button class="btn ghost" id="aReset">Reset count</button></div>
+    </div>
+    <div class="card">
+      <h3>How many labels do you need?</h3>
+      <div class="ctl"><label for="ciN">labels n</label><input id="ciN" type="range" min="10" max="400" step="10" value="100"><output id="ciNo">100</output></div>
+      <div class="ctl"><label for="ciK">false positives k</label><input id="ciK" type="range" min="0" max="40" value="3"><output id="ciKo">3</output></div>
+      <div class="ci" id="ci"></div>
+      <div class="stats" style="margin-top:28px">
+        <div class="stat">precision<b id="ciP">–</b></div>
+        <div class="stat">95% interval<b id="ciR">–</b></div>
+        <div class="stat">width<b id="ciW">–</b></div>
+      </div>
+      <p class="note-ill" style="margin:0">Wilson score interval. The axis shows 50–100%.</p>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="v-quiz">
+  <span class="eyebrow">Day 4 · Quiz</span>
+  <h2>10 questions. Score 8+ to pass.</h2>
+  <p class="lead">Multiple choice plus three you compute yourself.</p>
+  <div class="qwrap card" id="quiz"></div>
+</section>
+
+<section class="view" id="v-checkpoint">
+  <span class="eyebrow">Day 4 · Checkpoint</span>
+  <h2>Ship verifier v2 with evidence</h2>
+  <p class="lead">Code, labels, and a written audit. Send me the audit report and your test output.</p>
+  <div class="grid2">
+    <div class="card">
+      <h3>Tasks</h3>
+      <ol>
+        <li>Write <code>verifier/verifier_v2.py</code> with the same five functions as Day 2, using the v2 rules.</li>
+        <li>Pass the 26 tests on the right, and keep Day 2's 20 tests green (run them against v2).</li>
+        <li>Add every attack from your own catalog as a test.</li>
+        <li>Hand-label 100 rewarded + 50 zero-reward completions from Day 3. Compute precision and missed-answer rate.</li>
+        <li>Write <code>notes/verifier_audit.md</code> from the template in the notes.</li>
+      </ol>
+      <h3 style="margin-top:14px">Your checklist</h3>
+      <div class="checks">
+        <label><input type="checkbox" id="c1"> 26 v2 tests pass</label>
+        <label><input type="checkbox" id="c2"> Day 2 tests pass on v2</label>
+        <label><input type="checkbox" id="c3"> 150 completions hand-labelled</label>
+        <label><input type="checkbox" id="c4"> Audit report sent to Claude</label>
+      </div>
+    </div>
+    <div>
+      <p style="margin-top:0"><b>Tests</b>: save as <code>verifier/test_verifier_v2.py</code>, run <code>pytest</code>.</p>
+      <div class="codebox"><button class="btn" data-copy="tests">Copy</button><pre class="code" id="tests" style="max-height:640px"></pre></div>
+      <p class="note-ill">Checked against a reference v2: all 26 pass, and Day 2's 20 tests also pass on it. The Day 2 verifier fails 7 of these 26. Versions that skip the ASCII rule, allow commas anywhere, strip inner spaces, or allow repeated $ each fail at least one.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="site-foot"><div class="in"><span>RLE Lab · Kanishk Singh Parihar · Day 4 of 7</span><a href="../../index.html">Back to the roadmap</a></div></footer>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const store = { get: (k, d) => window.RLE.store.get("d4-" + k, d), set: (k, v) => window.RLE.store.set("d4-" + k, v) };
+const CSS = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+const VIEWS = ["lecture", "notes", "playground", "quiz", "checkpoint"];
+let done = store.get("done", {});
+function mark(v) { if (!done[v]) { done[v] = true; store.set("done", done); paintProg(); } }
+function paintProg() { const n = VIEWS.filter(v => done[v]).length; $("#progTxt").textContent = `${n} of 5 done`; $("#ring").style.setProperty("--p", n * 20); $("#ringPct").textContent = n * 20 + "%"; $$(".tab").forEach(t => t.classList.toggle("done", !!done[t.dataset.v])); }
+function route() {
+  const h = location.hash.slice(1), v = VIEWS.includes(h) ? h : "lecture";
+  $$(".view").forEach(s => s.classList.toggle("on", s.id === "v-" + v));
+  $$(".tab").forEach(t => { if (t.dataset.v === v) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current"); });
+  if (v === "notes") setTimeout(() => mark("notes"), 20000);
+  window.scrollTo({ top: 0 });
+}
+addEventListener("hashchange", route);
+
+const CH = [["Intro", 0.0], ["What reward hacking is", 36.8], ["It shows up everywhere", 58.2], ["Audit with hand labels", 78.9], ["How sure is that number?", 100.5], ["Build an attack catalog", 120.4], ["Hole 1: inner spaces", 144.8], ["Hole 2: commas anywhere", 166.4], ["Hole 3: Unicode digits", 183.8], ["Verifier v2 rules", 201.9], ["The precision/recall trade", 225.2], ["A limit parsing can't fix", 244.0], ["The audit report", 267.3], ["Recap", 286.5], ["Your checkpoint", 306.3]];
+const PARTS = [["day4_part1.mp4", 0], ["day4_part2.mp4", 144.8]], TOTAL = 330.0;
+const vid = $("#vid"); let part = 0;
+const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+function loadPart(i, at = 0, play = false) { if (part !== i) { part = i; vid.src = PARTS[i][0]; $("#partNo").textContent = i + 1; } const go = () => { vid.currentTime = at; if (play) vid.play().catch(() => {}); }; if (vid.readyState >= 1) go(); else vid.addEventListener("loadedmetadata", go, { once: true }); }
+function seekGlobal(t) { const i = t >= PARTS[1][1] ? 1 : 0; loadPart(i, t - PARTS[i][1], true); }
+$("#chapters").innerHTML = CH.map(([n, t]) => `<button class="chap" data-t="${t}"><time>${fmt(t)}</time><span>${n}</span></button>`).join("");
+$$(".chap").forEach(b => b.addEventListener("click", () => seekGlobal(+b.dataset.t)));
+vid.addEventListener("ended", () => { if (part === 0) loadPart(1, 0, true); else mark("lecture"); });
+vid.addEventListener("timeupdate", () => { const t = PARTS[part][1] + vid.currentTime; let cur = 0; CH.forEach(([, s], i) => { if (t >= s) cur = i; }); $$(".chap").forEach((b, i) => b.classList.toggle("now", i === cur)); if (t / TOTAL > 0.9) mark("lecture"); });
+
+/* ---- verifiers: v1 (Day 2, Python semantics incl. Unicode \d) and v2 ---- */
+function tags(c) { return [...(c || "").matchAll(/<answer>([\s\S]*?)<\/answer>/g)].map(m => m[1]); }
+function parse(c) { const f = tags(c); return f.length === 1 ? f[0].trim() : null; }
+function gold(a) { return a.split("####").pop().replace(/,/g, "").trim(); }
+function canon(x) { let neg = x.startsWith("-"); let [i, f = ""] = x.replace(/^-/, "").split("."); i = i.replace(/^0+(?=\d)/, ""); f = f.replace(/0+$/, ""); if (/^0*$/.test(i) && f === "") neg = false; return (neg ? "-" : "") + i + (f ? "." + f : ""); }
+function v1norm(s) { if (s == null) return null; const t = s.replace(/\$/g, "").replace(/,/g, "").replace(/ /g, "").trim(); if (!/^-?\p{Nd}+(\.\p{Nd}+)?$/u.test(t)) return null; return canon(t.normalize("NFKC")); }
+const NUM2 = /^-?\$?(\d{1,3}(,\d{3})+|\d+)(\.\d+)?$/;
+function v2norm(s) { if (s == null) return null; const t = s.trim(); if (!NUM2.test(t)) return null; return canon(t.replace(/\$/g, "").replace(/,/g, "")); }
+function v1(c, a) { const g = v1norm(gold(a)), n = v1norm(parse(c)); return n !== null && g !== null && n === g ? 1 : 0; }
+function v2(c, a) { const g = v2norm(gold(a)), n = v2norm(parse(c)); return n !== null && g !== null && n === g ? 1 : 0; }
+
+const CAT = [["Inner space", "<answer>7 2</answer>", "#### 72"], ["Misplaced comma", "<answer>7,2</answer>", "#### 72"], ["Commas anywhere", "<answer>1,2,5,0</answer>", "#### 1,250"],
+  ["Doubled $", "<answer>$$72</answer>", "#### 72"], ["Full-width digits", "<answer>\uff17\uff12</answer>", "#### 72"], ["Several answers", "<answer>72 or 75</answer>", "#### 72"],
+  ["A list", "<answer>70, 72, 75</answer>", "#### 72"], ["Two tags", "<answer>70</answer> wait <answer>72</answer>", "#### 72"], ["Expression", "<answer>6*12</answer>", "#### 72"],
+  ["Number words", "<answer>seventy-two</answer>", "#### 72"], ["Scientific", "<answer>7.2e1</answer>", "#### 72"], ["Empty tag", "<answer></answer>", "#### 72"],
+  ["Fake gold marker", "#### 72", "#### 72"], ["Truncated", "Reasoning... <answer>72", "#### 72"], ["Trailing dot", "<answer>72.</answer>", "#### 72"], ["Wrong sign", "<answer>-72</answer>", "#### 72"],
+  ["(right) plain", "<answer>72</answer>", "#### 72"], ["(right) $ and decimals", "<answer>$1,250.00</answer>", "#### 1,250"]];
+const cell = r => `<span class="${r ? "bad1" : "ok1"}">${r.toFixed(1)}</span>`;
+$("#catRows").innerHTML = CAT.map(([n, c, g]) => { const right = n.startsWith("(right)"); const a = v1(c, g), b = v2(c, g); const f = x => right ? `<span class="${x ? "ok1" : "bad1"}">${x.toFixed(1)}</span>` : cell(x); return `<tr><td>${esc(n)}${g !== "#### 72" ? ` <span class="note-ill">(gold ${esc(g.replace("#### ", ""))})</span>` : ""}</td><td><code>${esc(c)}</code></td><td>${f(a)}</td><td>${f(b)}</td></tr>`; }).join("");
+
+/* flip cards */
+const FL = [["Reward hacking", "concept", "RL raising reward without doing the task, because a shortcut scores well.", "--bad"],
+  ["Precision audit", "habit", "Hand-label 100 rewarded completions. Truly correct ÷ 100.", "--c1"],
+  ["Missed-answer rate", "habit", "Hand-label 50 zero-reward completions. Right answers missed ÷ 50.", "--c2"],
+  ["\"7 2\" scores 1.0?", "hole", "v1 deleted every space. v2 strips only the outside.", "--c4"],
+  ["Python \\d", "gotcha", "Matches Unicode digits like full-width ７. Use re.ASCII if you mean 0–9.", "--c3"],
+  ["Every attack…", "rule", "…becomes a test, so the hole can't reopen.", "--good"],
+  ["Strict rules cost recall", "trade", "Accept it on purpose. Missed right answer: wasted signal. Rewarded wrong one: wrong lesson.", "--c5"],
+  ["Answer-only limit", "limit", "Can't tell a lucky guess from real reasoning. Needs process checks or a judge.", "--bad"]];
+$("#flips").innerHTML = FL.map(([f, k, b, c]) => `<button class="flip" style="--c: var(${c})" aria-label="${esc(f)}: flip to reveal"><div class="in"><div class="f">${esc(f)}<small>${k} · tap to flip</small></div><div class="bk">${esc(b)}</div></div></button>`).join("");
+$$(".flip").forEach(b => b.onclick = () => b.classList.toggle("on"));
+
+/* arena */
+let logged = store.get("attacks", []);
+function arena() {
+  const c = $("#aComp").value, g = $("#aGold").value, a = v1(c, g), b = v2(c, g);
+  $("#r1").textContent = a.toFixed(1); $("#r2").textContent = b.toFixed(1);
+  $("#r1").style.color = a ? CSS("--bad") : CSS("--muted"); $("#r2").style.color = b ? CSS("--good") : CSS("--muted");
+  const fl = $("#aFlag");
+  if (a && !b) { fl.style.setProperty("--c", "var(--bad)"); fl.textContent = "Fools v1, blocked by v2. If a careful grader would reject this, it's a hole v2 closed."; }
+  else if (a && b) { fl.style.setProperty("--c", "var(--c4)"); fl.textContent = "Both reward it. Is it a clean right answer? If not, you found a hole in v2 too: write a test for it."; }
+  else if (!a && b) { fl.style.setProperty("--c", "var(--c2)"); fl.textContent = "Only v2 rewards it. Check whether that's intended."; }
+  else { fl.style.setProperty("--c", "var(--c3)"); fl.textContent = "Neither verifier rewards it."; }
+  $("#aCount").textContent = logged.length;
+}
+["#aComp", "#aGold"].forEach(s => $(s).addEventListener("input", arena));
+$("#aLog").onclick = () => { const c = $("#aComp").value.trim(), g = $("#aGold").value; if (v1(c, g) && !v2(c, g) && !logged.includes(c)) { logged.push(c); store.set("attacks", logged); burst(40); } mark("playground"); arena(); };
+$("#aReset").onclick = () => { logged = []; store.set("attacks", logged); arena(); };
+arena();
+
+/* Wilson CI */
+function wilson(k, n, z = 1.96) { const p = k / n, d = 1 + z * z / n, cen = (p + z * z / (2 * n)) / d, h = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d; return [cen - h, cen + h]; }
+function ci() {
+  const n = +$("#ciN").value; $("#ciK").max = Math.min(40, n); const k = Math.min(+$("#ciK").value, n);
+  $("#ciNo").textContent = n; $("#ciKo").textContent = k;
+  const p = (n - k) / n, [lo, hi] = wilson(n - k, n), X = v => `${Math.max(0, Math.min(100, (v - .5) / .5 * 100))}%`;
+  $("#ci").innerHTML = `<div class="band" style="left:${X(lo)};width:calc(${X(hi)} - ${X(lo)})"></div><div class="pt" style="left:${X(p)}"></div>` + [.5, .6, .7, .8, .9, 1].map(v => `<span class="ax" style="left:${X(v)}">${v * 100}%</span>`).join("");
+  $("#ciP").textContent = (p * 100).toFixed(1) + "%"; $("#ciR").textContent = `${(lo * 100).toFixed(1)}–${(hi * 100).toFixed(1)}%`; $("#ciW").textContent = ((hi - lo) * 100).toFixed(1) + " pts";
+}
+["#ciN", "#ciK"].forEach(s => $(s).addEventListener("input", () => { ci(); mark("playground"); })); ci();
+
+/* quiz */
+const Q = [
+  { q: "Reward hacking is best described as…", o: ["The model being malicious", "RL pushing probability toward whatever scores well, including shortcuts that skip the task", "A bug in the optimizer", "Overfitting to the test split"], a: 1, e: "It's RL working as designed on a flawed reward." },
+  { q: "Why did v1 give <answer>7 2</answer> a reward of 1.0 against gold 72?", o: ["It took the last tag", "normalize removed every space, so \"7 2\" became \"72\"", "It compared floats", "It ignored the tag"], a: 1, e: "v2 strips only the outside spaces." },
+  { q: "In Python, re.match(r\"\\d\", \"７\") (full-width 7)…", o: ["fails: \\d is ASCII only", "matches, because \\d covers Unicode digits unless you pass re.ASCII", "raises an error", "matches only with re.UNICODE"], a: 1, e: "Python 3's \\d is Unicode-aware by default. re.ASCII restricts it to 0–9." },
+  { num: true, q: "You hand-label 100 rewarded completions and find 4 are wrong. What is the precision? (2 decimals)", ans: 0.96, tol: 0.005, e: "96 / 100 = 0.96." },
+  { num: true, q: "Of 50 zero-reward completions, 6 were actually right. What is the missed-answer rate? (2 decimals)", ans: 0.12, tol: 0.005, e: "6 / 50 = 0.12." },
+  { q: "With more hand labels, the 95% interval around your precision estimate…", o: ["gets wider", "gets narrower", "stays the same", "always includes 100%"], a: 1, e: "More data, tighter estimate. Try 20 vs 100 labels in the Playground." },
+  { q: "Which is a valid v2 number?", o: ["1,2,5,0", "$$72", "1,250", "7 2"], a: 2, e: "Commas only in groups of three, at most one leading $, no inner spaces." },
+  { q: "Making the verifier stricter most likely…", o: ["raises recall", "lowers recall a little, in exchange for fewer false positives", "has no effect on recall", "makes it non-deterministic"], a: 1, e: "\"1 000\" or full-width digits now score 0 even when right. A trade you make on purpose." },
+  { num: true, q: "Your catalog has 17 attacks and v1 is fooled by 5. What share of attacks fool v1? (2 decimals)", ans: 0.29, tol: 0.01, e: "5 / 17 ≈ 0.29." },
+  { q: "What can an answer-only verifier NOT detect?", o: ["Two answer tags", "Scientific notation", "A lucky guess after nonsense reasoning", "An empty tag"], a: 2, e: "It only sees the final answer. Catching bad reasoning needs process checks or a judge." }
+];
+let qi = 0, score = 0, answered = false, best = store.get("best", 0);
+function renderQ() {
+  const box = $("#quiz");
+  if (qi >= Q.length) {
+    const pass = score >= 8; best = Math.max(best, score); store.set("best", best); if (pass) { mark("quiz"); burst(); }
+    box.innerHTML = `<div class="score"><div class="big">${score}/${Q.length}</div><h3>${pass ? "Passed. Nice work." : "Not yet: 8 to pass."}</h3><p style="color:var(--muted)">Best so far: ${best}/${Q.length}.</p><div class="row" style="justify-content:center"><button class="btn ghost" id="retry">Retry quiz</button>${pass ? '<a class="btn good" href="#checkpoint">Go to checkpoint</a>' : ""}</div></div>`;
+    $("#retry").onclick = () => { qi = 0; score = 0; renderQ(); }; return;
+  }
+  const it = Q[qi]; answered = false;
+  if (!it.num) it.ord = it.o.map((_, i) => i).sort(() => Math.random() - .5);
+  box.innerHTML = `<div class="qhead"><span class="pill">Question ${qi + 1} of ${Q.length}</span><div class="qbar"><i style="width:${qi / Q.length * 100}%"></i></div><b style="font-variant-numeric:tabular-nums">${score} pts</b></div>
+    <h3 style="font-size:23px">${esc(it.q)}</h3>
+    ${it.num ? `<form class="numin" id="numf"><label for="numv" class="sr">Your answer</label><input id="numv" inputmode="decimal" placeholder="e.g. 0.50" autocomplete="off"><button class="btn">Check</button></form>` : `<div class="opts">${it.ord.map((oi, k) => `<button class="opt" data-i="${oi}">${String.fromCharCode(65 + k)}. ${esc(it.o[oi])}</button>`).join("")}</div>`}
+    <div id="fbox"></div>`;
+  if (it.num) { $("#numv").focus(); $("#numf").onsubmit = e => { e.preventDefault(); if (answered) return; const v = parseFloat($("#numv").value.replace(",", ".")); if (isNaN(v)) { $("#fbox").innerHTML = `<div class="fb" style="--c:var(--c4)">Type a number, like 0.50.</div>`; return; } finish(Math.abs(v - it.ans) <= it.tol); }; }
+  else $$(".opt").forEach(b => b.onclick = () => { if (answered) return; const i = +b.dataset.i; $$(".opt").forEach(x => { x.disabled = true; if (+x.dataset.i === it.a) x.classList.add("right"); }); if (i !== it.a) b.classList.add("wrong"); finish(i === it.a); });
+}
+function finish(ok) {
+  answered = true; const it = Q[qi]; if (ok) score++;
+  $("#fbox").innerHTML = `<div class="fb" style="--c:var(${ok ? "--good" : "--bad"})"><b>${ok ? "Correct." : "Not quite."}</b> ${it.num ? `Answer: ${it.ans.toFixed(2)}. ` : ""}${esc(it.e)}</div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" id="next">${qi + 1 < Q.length ? "Next question" : "See score"}</button></div>`;
+  if (ok && !reduce) burst(40); $("#next").focus(); $("#next").onclick = () => { qi++; renderQ(); };
+}
+renderQ();
+
+const cc = $("#confetti"), cx2 = cc.getContext("2d"); let bits = [];
+function burst(n = 160) { if (reduce) return; cc.width = innerWidth; cc.height = innerHeight; const cols = ["--c1", "--c2", "--c3", "--c4", "--good"].map(CSS); const start = !bits.length; for (let i = 0; i < n; i++) bits.push({ x: innerWidth / 2, y: innerHeight / 3, vx: (Math.random() - .5) * 16, vy: Math.random() * -14 - 4, c: cols[i % 5], life: 120 }); if (start) loopConf(); }
+function loopConf() { cx2.clearRect(0, 0, cc.width, cc.height); bits.forEach(b => { b.x += b.vx; b.y += b.vy; b.vy += .45; b.life--; cx2.fillStyle = b.c; cx2.fillRect(b.x, b.y, 8, 5); }); bits = bits.filter(b => b.life > 0); if (bits.length) requestAnimationFrame(loopConf); else cx2.clearRect(0, 0, cc.width, cc.height); }
+
+const TESTS = "import pytest\nfrom decimal import Decimal\nfrom verifier_v2 import extract_gold, parse_answer, normalize, correctness_reward, format_reward\n\nGOLD = \"She sold 48 + 24 = 72 clips.\\n#### 72\"\n\ndef score(text, gold=GOLD):\n    return correctness_reward([text], [gold])[0]\n\n\n# ---- attacks: each must score 0.0 ----\nATTACKS = [\n    \"<answer>7 2</answer>\",                       # inner space (fooled v1)\n    \"<answer>7,2</answer>\",                       # misplaced comma (fooled v1)\n    \"<answer>$$72</answer>\",                      # doubled dollar sign (fooled v1)\n    \"<answer>\uff17\uff12</answer>\",              # full-width digits (fooled v1)\n    \"<answer>72 or 75</answer>\",                  # several answers\n    \"<answer>70, 72, 75</answer>\",                # a list\n    \"<answer>70</answer> wait <answer>72</answer>\",  # two tags\n    \"<answer>6*12</answer>\",                      # expression\n    \"<answer>seventy-two</answer>\",               # number words\n    \"<answer>7.2e1</answer>\",                     # scientific notation\n    \"<answer></answer>\",                          # empty tag\n    \"#### 72\",                                    # fake gold marker, no tag\n    \"The answer is 72.\",                          # no tag\n    \"Reasoning... <answer>72\",                    # truncated: no closing tag\n    \"<answer>72.</answer>\",                       # trailing dot\n    \"<answer>-72</answer>\",                       # wrong sign\n]\n\n@pytest.mark.parametrize(\"attack\", ATTACKS)\ndef test_attack_scores_zero(attack):\n    assert score(attack) == 0.0\n\ndef test_misplaced_commas_large_number():\n    assert score(\"<answer>1,2,5,0</answer>\", \"#### 1,250\") == 0.0\n\n\n# ---- regressions: right answers must still score 1.0 ----\n@pytest.mark.parametrize(\"ok\", [\n    \"<answer>72</answer>\", \"<answer> 72 </answer>\", \"<answer>$72</answer>\",\n    \"<answer>72.0</answer>\", \"<answer>0072</answer>\",\n])\ndef test_right_answers_still_pass(ok):\n    assert score(ok) == 1.0\n\ndef test_thousands_separator_still_passes():\n    assert score(\"<answer>$1,250.00</answer>\", \"#### 1,250\") == 1.0\n\ndef test_normalize_rules():\n    assert normalize(\"1,000\") == Decimal(\"1000\")\n    assert normalize(\"-2.5\") == Decimal(\"-2.5\")\n    assert normalize(\"1,00\") is None and normalize(\"7 2\") is None and normalize(\"$$1\") is None\n\ndef test_format_reward_only_for_valid_numbers():\n    assert format_reward([\"<answer>72</answer>\", \"<answer>7 2</answer>\", \"<answer></answer>\"]) == [0.1, 0.0, 0.0]\n\ndef test_conversational_format():\n    assert correctness_reward([[{\"role\": \"assistant\", \"content\": \"<answer>72</answer>\"}]], [GOLD]) == [1.0]\n";
+function hl(src) { return src.split("\n").map(line => { const ci = line.indexOf("#"); let code = ci >= 0 ? line.slice(0, ci) : line, cm = ci >= 0 ? line.slice(ci) : ""; code = esc(code).replace(/\b(import|from|def|assert|and|is|None|return|for|in)\b/g, '<span class="kw">$1</span>').replace(/\b(extract_gold|parse_answer|normalize|correctness_reward|format_reward|score|test_\w+|Decimal)\b/g, '<span class="fn">$1</span>'); return code + (cm ? `<span class="cm">${esc(cm)}</span>` : ""); }).join("\n"); }
+$("#tests").innerHTML = hl(TESTS);
+$$("[data-copy]").forEach(b => b.onclick = async () => { const t = b.dataset.copy === "tests" ? TESTS : $("#tpl").textContent; const lab = b.textContent; try { await navigator.clipboard.writeText(t); b.textContent = "Copied"; } catch (e) { b.textContent = "Select and copy"; } setTimeout(() => b.textContent = lab, 1800); });
+let ck = store.get("checks", {});
+["c1", "c2", "c3", "c4"].forEach(id => { const c = $("#" + id); c.checked = !!ck[id]; c.onchange = () => { ck[id] = c.checked; store.set("checks", ck); if (ck.c1 && ck.c2 && ck.c3) mark("checkpoint"); }; });
+
+paintProg(); route();
+});
+</script>
+</body>
+</html>
