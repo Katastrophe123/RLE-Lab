@@ -59,7 +59,7 @@
 
 <main>
 <section class="view" id="v-lecture">
-  <span class="eyebrow">Day 5 · 6 min lecture · 2 hours today</span>
+  <span class="eyebrow">Day 5 · 7 min lecture · 2 hours today</span>
   <h2>Retrain with v2, and what GRPO gets wrong</h2>
   <p class="lead">Your GPU retrains with verifier v2 while you learn the clipped objective, the KL leash, GRPO's two hidden biases, and DAPO's four fixes.</p>
   <div class="lecture">
@@ -80,7 +80,7 @@
     <div class="head"><div class="num">1</div><h3>Start the v2 run first (15 minutes)</h3></div>
     <ol>
       <li>Copy your Day 3 notebook. Swap <code>verifier_v1</code> for <code>verifier_v2</code> in the reward functions. <b>Change nothing else</b>: same model, data, prompt, seed, steps, learning rate.</li>
-      <li>On Kaggle, use <b>Save Version → Save &amp; Run All</b> so it runs in the background while you study. Log to the same project as Day 3 with a run name like <code>v2-verifier</code>.</li>
+      <li>On Kaggle, use <b>Save Version → Save &amp; Run All</b> so it runs in the background while you study (a Colab run stops when you close its tab, so if you stay on Colab, keep the tab open). Log to the same project as Day 3 with a run name like <code>v2-verifier</code>.</li>
       <li>Check the first few logged steps: reward columns present, no errors, lengths under the cap. Then leave it.</li>
     </ol>
     <p class="note-ill">One change per run. If you also changed the learning rate, tomorrow you couldn't tell which change caused what.</p>
@@ -166,6 +166,13 @@ dapo     = Σ all token losses / total tokens in the batch          <span class=
   <div class="card note" style="--c: var(--c5)">
     <div class="head"><div class="num">8</div><h3>Flip cards</h3></div>
     <div class="flips" id="flips"></div>
+  </div>
+
+  <div class="card note" style="--c: var(--c3)">
+    <div class="head"><div class="num">9</div><h3>Glossary</h3></div>
+    <input class="gloss-in" id="glossQ" type="search" placeholder="Filter terms…" aria-label="Filter glossary">
+    <dl class="gloss" id="gloss"><div><dt>Ratio</dt><dd>π_new(token) ÷ π_old(token). 1 means the token&#x27;s probability hasn&#x27;t changed.</dd></div><div><dt>Objective</dt><dd>The score each training step tries to raise.</dd></div><div><dt>Gradient</dt><dd>The direction (and size) an update pushes each token&#x27;s probability.</dd></div><div><dt>Policy gradient</dt><dd>The simplest update: advantage × ratio, with no limit.</dd></div><div><dt>Clipping (ε)</dt><dd>Caps the ratio to a band like 0.8–1.2. A speed limit per token.</dd></div><div><dt>Reference model</dt><dd>A frozen copy of the model from before training.</dd></div><div><dt>KL penalty (β)</dt><dd>Subtracts drift from the reference model. β = 0 turns it off.</dd></div><div><dt>Std division bias</dt><dd>Dividing by the std makes tiny reward gaps look as big as real ones.</dd></div><div><dt>Length bias</dt><dd>Per-answer averaging gives long answers&#x27; tokens less weight each.</dd></div><div><dt>Entropy collapse</dt><dd>The model stops exploring and always answers the same way.</dd></div><div><dt>Ablation</dt><dd>Add or remove one piece at a time to see what each is worth.</dd></div><div><dt>AIME</dt><dd>A hard high-school math competition used as a benchmark.</dd></div><div><dt>Dynamic sampling</dt><dd>Drop groups where every reward is equal; resample to fill the batch.</dd></div></dl>
+    <script>document.getElementById("glossQ").addEventListener("input",function(e){var q=e.target.value.toLowerCase();document.querySelectorAll("#gloss>div").forEach(function(d){d.hidden=q&&d.textContent.toLowerCase().indexOf(q)<0})})</script>
   </div>
 </section>
 
@@ -275,8 +282,8 @@ function route() {
 }
 addEventListener("hashchange", route);
 
-const CH = [["Intro", 0.0], ["Launch the v2 run", 37.8], ["The ratio", 57.4], ["PPO's clip", 76.7], ["The KL leash", 100.5], ["Bias 1: std division", 127.3], ["Dr. GRPO's fix", 152.9], ["Bias 2: length", 173.9], ["Fixing the length bias", 200.6], ["DAPO's ablation", 218.8], ["Fix 1: clip-higher", 239.5], ["Fix 2: dynamic sampling", 259.6], ["Fixes 3 and 4", 278.2], ["TRL settings", 298.8], ["Recap", 327.1], ["Your checkpoint", 350.2]];
-const PARTS = [["day5_part1.mp4", 0], ["day5_part2.mp4", 173.9]], TOTAL = 378.7;
+const CH = [["Intro", 0.0], ["Words you need", 40.5], ["Launch the v2 run", 68.4], ["The ratio", 93.1], ["PPO's clip", 112.4], ["The KL leash", 143.5], ["Bias 1: std division", 174.1], ["Dr. GRPO's fix", 201.7], ["Bias 2: length", 222.8], ["Fixing the length bias", 252.4], ["DAPO's ablation", 270.6], ["Fix 1: clip-higher", 295.7], ["Fix 2: dynamic sampling", 315.8], ["Fixes 3 and 4", 334.4], ["TRL settings", 355.0], ["Recap", 383.4], ["Your checkpoint", 406.5]];
+const PARTS = [["day5_part1.mp4", 0], ["day5_part2.mp4", 222.8]], TOTAL = 434.9;
 const vid = $("#vid"); let part = 0;
 const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 function loadPart(i, at = 0, play = false) { if (part !== i) { part = i; vid.src = PARTS[i][0]; $("#partNo").textContent = i + 1; } const go = () => { vid.currentTime = at; if (play) vid.play().catch(() => {}); }; if (vid.readyState >= 1) go(); else vid.addEventListener("loadedmetadata", go, { once: true }); }

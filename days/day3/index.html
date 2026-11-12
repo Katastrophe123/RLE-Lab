@@ -61,7 +61,7 @@
 <main>
 <!-- LECTURE -->
 <section class="view" id="v-lecture">
-  <span class="eyebrow">Day 3 · 6 min lecture · 5 hours today</span>
+  <span class="eyebrow">Day 3 · 7 min lecture · 5 hours today</span>
   <h2>Baseline eval and your first GRPO run</h2>
   <p class="lead">Measure a small model, train it with GRPO against your Day 2 verifier, and measure it again. Watch the lecture first; the run itself happens on a free GPU.</p>
   <div class="lecture">
@@ -171,6 +171,13 @@ trainer.train()</pre>
   <div class="card note" style="--c: var(--c3)">
     <div class="head"><div class="num">9</div><h3>Flip cards</h3></div>
     <div class="flips" id="flips"></div>
+  </div>
+
+  <div class="card note" style="--c: var(--c3)">
+    <div class="head"><div class="num">10</div><h3>Glossary</h3></div>
+    <input class="gloss-in" id="glossQ" type="search" placeholder="Filter terms…" aria-label="Filter glossary">
+    <dl class="gloss" id="gloss"><div><dt>Temperature</dt><dd>How random the next-token pick is. 0 = always the most likely token; 1 = sample from the full spread.</dd></div><div><dt>Greedy decoding</dt><dd>Temperature 0: the same input gives the same output every time.</dd></div><div><dt>Instruct model</dt><dd>A model already tuned to follow instructions.</dd></div><div><dt>LoRA</dt><dd>Train a few small add-on layers instead of all the weights. Saves memory.</dd></div><div><dt>Adapter</dt><dd>The small trained LoRA layers. You save and share just these.</dd></div><div><dt>Learning rate</dt><dd>The size of each update step. Too big: unstable. Too small: nothing moves.</dd></div><div><dt>Checkpoint</dt><dd>A saved copy of the model in the middle of training.</dd></div><div><dt>Hugging Face Hub</dt><dd>A free online store for models and datasets.</dd></div><div><dt>pass@k</dt><dd>Share of problems where at least one of k sampled answers is right.</dd></div><div><dt>Mixed group</dt><dd>A group with some right and some wrong answers. Only these give GRPO signal.</dd></div><div><dt>KL divergence</dt><dd>How far the trained model has drifted from where it started.</dd></div><div><dt>Train / test split</dt><dd>Train on one set of problems, evaluate on different ones.</dd></div><div><dt>Baseline</dt><dd>Your numbers before training, measured the same way as after.</dd></div></dl>
+    <script>document.getElementById("glossQ").addEventListener("input",function(e){var q=e.target.value.toLowerCase();document.querySelectorAll("#gloss>div").forEach(function(d){d.hidden=q&&d.textContent.toLowerCase().indexOf(q)<0})})</script>
   </div>
 </section>
 
@@ -290,8 +297,8 @@ function route() {
 addEventListener("hashchange", route);
 
 /* lecture */
-const CH = [["Intro", 0.0], ["Recap of Day 2", 37.2], ["Experiment design", 54.2], ["Setup: GPU, model, LoRA", 79.6], ["Freeze the system prompt", 104.4], ["Baseline eval", 124.3], ["pass@8 and mixed groups", 146.5], ["Training config", 169.0], ["Hub checkpoints", 194.1], ["Five curves to watch", 208.1], ["What healthy looks like", 227.7], ["What trouble looks like", 247.6], ["Evaluate after training", 271.0], ["The reward vs accuracy gap", 291.0], ["When things break", 313.3], ["Recap", 335.5], ["Your checkpoint", 355.8]];
-const PARTS = [["day3_part1.mp4", 0], ["day3_part2.mp4", 169.0]], TOTAL = 381.4;
+const CH = [["Intro", 0.0], ["Recap of Day 2", 37.2], ["Words you need", 54.2], ["Experiment design", 100.9], ["Setup: GPU, model, LoRA", 126.3], ["Freeze the system prompt", 158.9], ["Baseline eval", 178.9], ["pass@8 and mixed groups", 201.0], ["Training config", 223.5], ["Hub checkpoints", 248.6], ["Five curves to watch", 265.3], ["What healthy looks like", 285.0], ["What trouble looks like", 304.9], ["Evaluate after training", 328.3], ["The reward vs accuracy gap", 348.3], ["When things break", 370.6], ["Recap", 392.7], ["Your checkpoint", 413.1]];
+const PARTS = [["day3_part1.mp4", 0], ["day3_part2.mp4", 223.5]], TOTAL = 438.7;
 const vid = $("#vid"); let part = 0;
 const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 function loadPart(i, at = 0, play = false) { if (part !== i) { part = i; vid.src = PARTS[i][0]; $("#partNo").textContent = i + 1; } const go = () => { vid.currentTime = at; if (play) vid.play().catch(() => {}); }; if (vid.readyState >= 1) go(); else vid.addEventListener("loadedmetadata", go, { once: true }); }

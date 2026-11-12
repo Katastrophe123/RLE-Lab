@@ -163,6 +163,13 @@ def normalize(s):
     <div class="head"><div class="num">7</div><h3>Flip cards</h3></div>
     <div class="flips" id="flips"></div>
   </div>
+
+  <div class="card note" style="--c: var(--c3)">
+    <div class="head"><div class="num">8</div><h3>Glossary</h3></div>
+    <input class="gloss-in" id="glossQ" type="search" placeholder="Filter terms…" aria-label="Filter glossary">
+    <dl class="gloss" id="gloss"><div><dt>Reward hacking</dt><dd>Raising the reward without doing the task you meant.</dd></div><div><dt>Audit</dt><dd>Hand-label real completions to measure how often the verifier is wrong.</dd></div><div><dt>Missed-answer rate</dt><dd>Of zero-reward completions, the share that were actually right.</dd></div><div><dt>Confidence interval</dt><dd>The range your true precision probably lies in. More labels, narrower range.</dd></div><div><dt>Attack catalog</dt><dd>A list of tricky completions, each with the reward it should get.</dd></div><div><dt>Regular expression</dt><dd>A pattern for matching text, like &#x27;digits, then an optional decimal part&#x27;.</dd></div><div><dt>Unicode</dt><dd>The standard that covers every script&#x27;s characters, including non-English digits.</dd></div><div><dt>ASCII digits</dt><dd>The plain 0–9 characters.</dd></div><div><dt>Regression test</dt><dd>A test that keeps a fixed bug from coming back.</dd></div><div><dt>Process check</dt><dd>Grading the reasoning steps, not just the final answer.</dd></div></dl>
+    <script>document.getElementById("glossQ").addEventListener("input",function(e){var q=e.target.value.toLowerCase();document.querySelectorAll("#gloss>div").forEach(function(d){d.hidden=q&&d.textContent.toLowerCase().indexOf(q)<0})})</script>
+  </div>
 </section>
 
 <section class="view" id="v-playground">

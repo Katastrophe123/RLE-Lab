@@ -193,6 +193,13 @@ trainer = GRPOTrainer(..., reward_funcs=[correctness_reward, format_reward])  <s
     <div class="head"><div class="num">7</div><h3>Flip cards</h3></div>
     <div class="flips" id="flips"></div>
   </div>
+
+  <div class="card note" style="--c: var(--c3)">
+    <div class="head"><div class="num">8</div><h3>Glossary</h3></div>
+    <input class="gloss-in" id="glossQ" type="search" placeholder="Filter terms…" aria-label="Filter glossary">
+    <dl class="gloss" id="gloss"><div><dt>Verifier</dt><dd>A function that turns a completion into a reward.</dd></div><div><dt>Gold answer</dt><dd>The correct answer from the dataset.</dd></div><div><dt>Parse</dt><dd>Find the answer inside the model&#x27;s text, e.g. between answer tags.</dd></div><div><dt>Normalize</dt><dd>Rewrite numbers so equal values look equal: $1,000.00 → 1000.</dd></div><div><dt>Precision</dt><dd>Of the answers the verifier rewarded, the share that were truly correct.</dd></div><div><dt>Recall</dt><dd>Of the truly correct answers, the share the verifier rewarded.</dd></div><div><dt>False positive</dt><dd>A wrong answer that got rewarded. The dangerous one.</dd></div><div><dt>False negative</dt><dd>A right answer that got 0. Wastes signal.</dd></div><div><dt>Deterministic</dt><dd>The same input always gives the same score.</dd></div><div><dt>Floating point</dt><dd>How computers store decimals approximately: 0.1 + 0.2 ≠ 0.3.</dd></div><div><dt>Decimal</dt><dd>Python&#x27;s exact decimal numbers. Used for comparing answers.</dd></div><div><dt>Rubric</dt><dd>A written checklist a judge model grades against.</dd></div><div><dt>Format reward</dt><dd>A small bonus for using the answer tag correctly. Log it separately.</dd></div></dl>
+    <script>document.getElementById("glossQ").addEventListener("input",function(e){var q=e.target.value.toLowerCase();document.querySelectorAll("#gloss>div").forEach(function(d){d.hidden=q&&d.textContent.toLowerCase().indexOf(q)<0})})</script>
+  </div>
 </section>
 
 <!-- PLAYGROUND -->

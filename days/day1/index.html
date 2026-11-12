@@ -41,7 +41,7 @@
 <main>
 <!-- LECTURE -->
 <section class="view" id="v-lecture">
-  <span class="eyebrow">Day 1 · 7 min lecture</span>
+  <span class="eyebrow">Day 1 · 8 min lecture</span>
   <h2>The RL loop and the GRPO advantage</h2>
   <p class="lead">Start here. Watch the animated lecture, then work through the notes and playground before the quiz. Click a chapter to jump.</p>
   <div class="lecture">
@@ -134,6 +134,13 @@
   <div class="card note" style="--c: var(--c5)">
     <div class="head"><div class="num">7</div><h3>Flip cards: mistakes and one-liners</h3></div>
     <div class="flips" id="flips"></div>
+  </div>
+
+  <div class="card note" style="--c: var(--c3)">
+    <div class="head"><div class="num">8</div><h3>Glossary</h3></div>
+    <input class="gloss-in" id="glossQ" type="search" placeholder="Filter terms…" aria-label="Filter glossary">
+    <dl class="gloss" id="gloss"><div><dt>Token</dt><dd>A small piece of text (a word or part of one). Models read and write one token at a time.</dd></div><div><dt>Policy</dt><dd>The model being trained. It gives a probability to each possible next token.</dd></div><div><dt>Post-training</dt><dd>Everything after pre-training: teaching a model to follow instructions and solve tasks.</dd></div><div><dt>Reward</dt><dd>A score for one completion, e.g. 1 if the final number is right, 0 if not.</dd></div><div><dt>Rollout / completion</dt><dd>One answer the model sampled for a prompt.</dd></div><div><dt>Group (G)</dt><dd>The several answers sampled for the same prompt, e.g. 8.</dd></div><div><dt>Advantage</dt><dd>How much better or worse an answer did than its group. Like grading on a curve.</dd></div><div><dt>Mean</dt><dd>The average reward of the group.</dd></div><div><dt>Standard deviation</dt><dd>How spread out the rewards are. 0 means every answer scored the same.</dd></div><div><dt>Epsilon (ε)</dt><dd>A tiny number added so you never divide by zero.</dd></div><div><dt>Gradient</dt><dd>The direction an update pushes each token&#x27;s probability, up or down.</dd></div><div><dt>Learning rate</dt><dd>The size of each update step.</dd></div><div><dt>Clipping</dt><dd>A cap on how far one token&#x27;s probability can move in one step (Day 5).</dd></div><div><dt>KL penalty</dt><dd>A pull back toward the starting model, so it doesn&#x27;t drift too far (Day 5).</dd></div><div><dt>Critic / value model</dt><dd>PPO&#x27;s second network that predicts the expected reward. GRPO doesn&#x27;t need it.</dd></div><div><dt>RLHF / RLVR</dt><dd>Reward from a model trained on human preferences / from a program that checks the answer.</dd></div></dl>
+    <script>document.getElementById("glossQ").addEventListener("input",function(e){var q=e.target.value.toLowerCase();document.querySelectorAll("#gloss>div").forEach(function(d){d.hidden=q&&d.textContent.toLowerCase().indexOf(q)<0})})</script>
   </div>
 </section>
 
@@ -259,9 +266,9 @@ function route() {
 addEventListener("hashchange", route);
 
 /* ---------- lecture ---------- */
-const CH = [["Intro", 0], ["Basics: what a policy is", 35.3], ["Why RL", 77.9], ["The loop, six steps", 116.3], ["RLHF vs RLVR", 192.0], ["PPO vs GRPO", 231.4], ["The advantage formula", 271.6], ["Worked examples", 289.2], ["Zero-signal trap", 342.3], ["Recap", 379.0], ["Your checkpoint", 398.3]];
+const CH = [["Intro", 0.0], ["Basics: what a policy is", 43.9], ["Why RL", 86.4], ["The loop, six steps", 124.8], ["RLHF vs RLVR", 222.4], ["PPO vs GRPO", 261.8], ["The advantage formula", 302.0], ["Worked examples", 325.4], ["Zero-signal trap", 389.5], ["Recap", 426.1], ["Your checkpoint", 445.5]];
 const vid = $("#vid");
-const PARTS = [["day1_part1.mp4", 0], ["day1_part2.mp4", 192.0]], TOTAL = 421.6;
+const PARTS = [["day1_part1.mp4", 0], ["day1_part2.mp4", 261.8]], TOTAL = 468.7;
 let part = 0;
 const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
 function loadPart(i, at = 0, play = false) {

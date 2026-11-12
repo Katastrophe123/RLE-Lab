@@ -104,3 +104,11 @@ pre.code { background: var(--surface-2); border: 1px solid var(--line); border-r
 .checks input { width: 20px; height: 20px; accent-color: var(--good); }
 .kw { color: var(--c2); font-weight: 600; } .fn { color: var(--c1); } .str { color: var(--c4); } .cm { color: var(--muted); font-style: italic; } .nm { color: var(--c4); }
 #stepPill { background: var(--c); color: var(--on-color); border-color: var(--c); }
+
+/* glossary */
+.gloss-in { width: 100%; max-width: 360px; font: inherit; padding: 9px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); margin-bottom: 12px; }
+.gloss { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; margin: 0; }
+.gloss div { border: 1px solid var(--line); border-radius: 14px; padding: 10px 14px; background: var(--surface-2); }
+.gloss dt { font-weight: 700; }
+.gloss dd { margin: 4px 0 0; color: var(--muted); font-size: 15px; line-height: 1.5; }
+.gloss div[hidden] { display: none; }
