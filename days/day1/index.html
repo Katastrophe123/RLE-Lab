@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Day 1 · The RL Loop · RLE Lab</title>
+<script>try{var t=localStorage.getItem("rle-theme");if(t&&t!=="system")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
+<script src="../../assets/site.js" defer></script>
+<style>
+/* day tabs + progress */
+.daybar { max-width: 1160px; margin: 0 auto; padding: 0 20px 10px; display: flex; gap: 10px; align-items: center; }
+nav.tabs { display: flex; gap: 6px; overflow-x: auto; flex: 1; }
+.tab { flex: none; display: flex; gap: 8px; align-items: center; padding: 8px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-weight: 600; font-size: 15px; text-decoration: none; transition: transform .15s; }
+.tab:hover { transform: translateY(-1px); }
+.tab .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); }
+.tab .tick { color: var(--good); font-size: 13px; display: none; }
+.tab.done .tick { display: inline; }
+.tab[aria-current="page"] { border-color: var(--ink); background: var(--surface-2); }
+.prog { display: flex; gap: 10px; align-items: center; font-size: 14px; color: var(--muted); flex: none; }
+.ring { width: 40px; height: 40px; border-radius: 50%; background: conic-gradient(var(--good) calc(var(--p, 0) * 1%), var(--bg-2) 0); display: grid; place-items: center; }
+.ring span { width: 30px; height: 30px; border-radius: 50%; background: var(--bg); display: grid; place-items: center; font-weight: 700; color: var(--ink); font-size: 11px; font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) { .prog #progTxt { display: none; } }
+
+section.view { display: none; animation: rise .4s ease both; }
+section.view.on { display: block; }
+@keyframes rise { from { opacity: .3; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.view > .lead { margin-bottom: 24px; }
+
+/* lecture */
+.lecture { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(240px, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 860px) { .lecture { grid-template-columns: 1fr; } }
+video { width: 100%; border-radius: 16px; background: #000; display: block; box-shadow: var(--shadow); }
+.chapters { display: flex; flex-direction: column; gap: 4px; }
+.chap { display: grid; grid-template-columns: 50px 1fr; gap: 8px; align-items: center; text-align: left; padding: 8px 10px; border-radius: 10px; border: 1px solid transparent; background: transparent; color: var(--ink); }
+.chap:hover { background: var(--surface-2); }
+.chap.now { background: var(--surface-2); border-color: var(--accent); }
+.chap time { font-family: var(--mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+/* notes */
+.note { margin: 0 0 20px; }
+.note > .head { display: flex; gap: 14px; align-items: center; margin-bottom: 12px; }
+.num { width: 40px; height: 40px; flex: none; border-radius: 12px; display: grid; place-items: center; font-family: var(--display); font-weight: 800; background: var(--c); color: var(--on-color); }
+.probs { display: flex; gap: 12px; align-items: flex-end; height: 220px; padding: 10px 0; }
+.pb { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 6px; }
+.pb .b { width: 100%; max-width: 90px; border-radius: 10px 10px 4px 4px; background: var(--c); transition: height .6s cubic-bezier(.2,1.4,.4,1); }
+.pb strong { font-variant-numeric: tabular-nums; }
+.pb span { font-weight: 700; font-family: var(--mono); }
+#loopSvg { width: 100%; max-width: 440px; display: block; margin: 0 auto; }
+.node { cursor: pointer; }
+.node:hover circle.main, .node.sel circle.main { stroke: var(--ink); stroke-width: 4; }
+.vs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 640px) { .vs { grid-template-columns: 1fr; } }
+.vs .card { box-shadow: none; border-top: 4px solid var(--c); }
+.vs .pill { color: var(--on-color); background: var(--c); border-color: var(--c); }
+.mem { height: 26px; border-radius: 13px; background: var(--bg-2); display: flex; overflow: hidden; margin-top: 10px; }
+.mem i { height: 100%; transition: width .8s; font-style: normal; font-size: 12px; font-weight: 700; color: var(--on-color); display: grid; place-items: center; }
+.formula { font-family: var(--display); font-size: clamp(26px, 4.5vw, 44px); font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 18px; flex-wrap: wrap; padding: 18px 0; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; }
+.frac .over { border-bottom: 3px solid var(--ink); padding: 0 10px 6px; }
+.frac .under { padding-top: 6px; }
+.t { position: relative; cursor: help; border-radius: 8px; padding: 0 4px; transition: background .2s; }
+.t:hover, .t:focus { background: var(--surface-2); }
+.t .tip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%) scale(.9); opacity: 0; pointer-events: none; transition: .2s; background: var(--ink); color: var(--bg); font-family: var(--body); font-size: 14px; font-weight: 600; padding: 6px 10px; border-radius: 10px; white-space: nowrap; }
+.t:hover .tip, .t:focus .tip { opacity: 1; transform: translateX(-50%) scale(1); }
+#exRows tr:hover { background: var(--surface-2); }
+.flips { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
+.flip { perspective: 900px; height: 170px; border: 0; background: none; padding: 0; color: var(--ink); text-align: left; }
+.flip .in { position: relative; width: 100%; height: 100%; transition: transform .6s; transform-style: preserve-3d; }
+.flip.on .in { transform: rotateY(180deg); }
+.flip .f, .flip .bk { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+.flip .f { background: var(--surface-2); border: 1px solid var(--line); border-left: 6px solid var(--c); font-family: var(--display); font-weight: 700; font-size: 20px; }
+.flip .f small { font-family: var(--body); font-weight: 500; font-size: 13px; color: var(--muted); }
+.flip .bk { background: var(--surface); border: 1px solid var(--c); transform: rotateY(180deg); font-size: 15px; }
+ul.tight { margin: 8px 0 0; padding-left: 20px; }
+ul.tight li { margin: 4px 0; }
+
+/* playground */
+.sliders { display: grid; gap: 10px; }
+.sl { display: grid; grid-template-columns: 96px 1fr 54px; gap: 10px; align-items: center; }
+.sl output { font-variant-numeric: tabular-nums; font-family: var(--mono); }
+.chart { width: 100%; height: 300px; display: block; }
+.stats { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
+.stat { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 14px; }
+.stat b { color: var(--ink); font-size: 20px; display: block; font-family: var(--display); }
+.dots { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; min-height: 40px; }
+.dots i { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-weight: 800; color: #fff; animation: popin .35s cubic-bezier(.2,1.6,.4,1) both; }
+@keyframes popin { from { transform: scale(0); } to { transform: scale(1); } }
+
+/* quiz */
+.qwrap { max-width: 820px; }
+.qhead { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
+.qbar { height: 8px; background: var(--bg-2); border-radius: 4px; overflow: hidden; flex: 1; }
+.qbar i { display: block; height: 100%; background: var(--accent); transition: width .4s; }
+.opts { display: grid; gap: 10px; margin: 16px 0; }
+.opt { text-align: left; padding: 14px 16px; border-radius: 14px; border: 2px solid var(--line); background: var(--surface); color: var(--ink); transition: transform .12s, border-color .2s; }
+.opt:hover:not([disabled]) { transform: translateX(4px); border-color: var(--accent); }
+.opt.right { border-color: var(--good); background: color-mix(in srgb, var(--good) 14%, var(--surface)); }
+.opt.wrong { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, var(--surface)); animation: shake .35s; }
+@keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.fb { border-radius: 12px; padding: 14px 16px; margin-top: 8px; border-left: 5px solid var(--c); background: var(--surface-2); }
+.numin { display: flex; gap: 10px; margin: 16px 0; flex-wrap: wrap; }
+.numin input { flex: 1; min-width: 160px; font-family: var(--mono); padding: 12px 14px; border-radius: 12px; border: 2px solid var(--line); background: var(--surface); color: var(--ink); }
+.score { text-align: center; padding: 30px 10px; }
+.big { font-family: var(--display); font-size: 84px; font-weight: 800; color: var(--accent); line-height: 1; }
+#confetti { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
+
+/* checkpoint */
+pre.code { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 16px; overflow-x: auto; font-size: 14px; line-height: 1.6; margin: 0; }
+.codebox { position: relative; }
+.codebox .btn { position: absolute; top: 10px; right: 10px; padding: 5px 12px; font-size: 13px; }
+.checks label { display: flex; gap: 10px; align-items: center; padding: 8px 0; }
+.checks input { width: 20px; height: 20px; accent-color: var(--good); }
+.kw { color: var(--c2); font-weight: 600; } .fn { color: var(--c1); } .str { color: var(--c4); } .cm { color: var(--muted); font-style: italic; } .nm { color: var(--c4); }
+#stepPill { background: var(--c); color: var(--on-color); border-color: var(--c); }
+</style>
+</head>
+<body>
+<canvas id="confetti" aria-hidden="true"></canvas>
+<header class="site-header">
+  <div class="site-bar">
+    <a class="brand" href="../../index.html"><span class="mark" aria-hidden="true"></span>RLE Lab</a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="../../index.html">Roadmap</a>
+      <a href="index.html" aria-current="page">Day 1</a>
+    </nav>
+    <button class="theme-btn" data-theme-btn type="button">Theme</button>
+  </div>
+  <div class="daybar">
+    <nav class="tabs" aria-label="Day 1 sections">
+      <a class="tab" href="#lecture" data-v="lecture" style="--c: var(--c1)"><span class="dot"></span>1 · Lecture<span class="tick">✓</span></a>
+      <a class="tab" href="#notes" data-v="notes" style="--c: var(--c2)"><span class="dot"></span>2 · Notes<span class="tick">✓</span></a>
+      <a class="tab" href="#playground" data-v="playground" style="--c: var(--c3)"><span class="dot"></span>3 · Playground<span class="tick">✓</span></a>
+      <a class="tab" href="#quiz" data-v="quiz" style="--c: var(--c4)"><span class="dot"></span>4 · Quiz<span class="tick">✓</span></a>
+      <a class="tab" href="#checkpoint" data-v="checkpoint" style="--c: var(--good)"><span class="dot"></span>5 · Checkpoint<span class="tick">✓</span></a>
+    </nav>
+    <div class="prog"><span id="progTxt">0 of 5 done</span><div class="ring" id="ring"><span id="ringPct">0%</span></div></div>
+  </div>
+</header>
+<main>
+<!-- LECTURE -->
+<section class="view" id="v-lecture">
+  <span class="eyebrow">Day 1 · 7 min lecture</span>
+  <h2>The RL loop and the GRPO advantage</h2>
+  <p class="lead">Start here. Watch the animated lecture, then work through the notes and playground before the quiz. Click a chapter to jump.</p>
+  <div class="lecture">
+    <div>
+    <video id="vid" controls preload="metadata" src="day1_part1.mp4#t=0.6"></video>
+    <p style="color:var(--muted);font-size:14px;margin:8px 0 0">Part <span id="partNo">1</span> of 2 · part 2 starts automatically.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:10px">Chapters</h3>
+      <div class="chapters" id="chapters"></div>
+    </div>
+  </div>
+</section>
+
+<!-- NOTES -->
+<section class="view" id="v-notes">
+  <span class="eyebrow">Day 1 · Notes</span>
+  <h2>Everything from the lecture, hands-on</h2>
+  <p class="lead">Every section has something to click. Read top to bottom once; come back to the one-liners before an interview.</p>
+
+  <div class="card note" style="--c: var(--c3)">
+    <div class="head"><div class="num">1</div><h3>A policy is a probability machine</h3></div>
+    <p>A language model writes one token at a time, giving a probability to every possible next token. In RL that model is called the <b>policy</b>. Below: after <code>"The answer is"</code>, these are its guesses. RL training is just nudging these bars, thousands of times.</p>
+    <div class="probs" id="probs"></div>
+    <div class="row">
+      <button class="btn good" id="nudgeUp">Answer "42" scored 1: nudge up</button>
+      <button class="btn bad" id="nudgeDown">Answer "41" scored 0: nudge down</button>
+      <button class="btn ghost" id="nudgeReset">Reset</button>
+    </div>
+  </div>
+
+  <div class="card note" style="--c: var(--c2)">
+    <div class="head"><div class="num">2</div><h3>The loop, in six steps</h3></div>
+    <p>Click any step. A glowing token circles the loop the way one batch does.</p>
+    <div class="grid2" style="align-items:center">
+      <svg id="loopSvg" viewBox="0 0 460 460" role="img" aria-label="The six-step RL loop"></svg>
+      <div>
+        <span class="pill" id="stepPill" style="--c: var(--c3)">Step 1</span>
+        <h3 id="stepTitle" style="margin:8px 0">Prompts</h3>
+        <p id="stepText" style="margin:0"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card note" style="--c: var(--good)">
+    <div class="head"><div class="num">3</div><h3>Where the reward comes from</h3></div>
+    <div class="vs">
+      <div class="card" style="--c: var(--c2)"><span class="pill">RLHF</span>
+        <p><b>A learned model gives the reward.</b> People compare pairs of answers, a reward model learns their taste, and it scores rollouts.</p>
+        <ul class="tight"><li>Good for fuzzy goals: tone, helpfulness</li><li style="color:var(--c4)">Risk: the reward model can be fooled</li></ul></div>
+      <div class="card" style="--c: var(--good)"><span class="pill">RLVR · this week</span>
+        <p><b>A program gives the reward.</b> Did the code pass its tests? Is the final number right?</p>
+        <ul class="tight"><li>Cheap, fast, precise, deterministic</li><li style="color:var(--c4)">Limit: only tasks you can check; a buggy checker gets gamed</li></ul></div>
+    </div>
+  </div>
+
+  <div class="card note" style="--c: var(--c4)">
+    <div class="head"><div class="num">4</div><h3>PPO vs GRPO: who sets the baseline?</h3></div>
+    <p>To know if an answer was good you need a baseline: how well the model usually does. Toggle to compare.</p>
+    <div class="seg" role="group" aria-label="Algorithm"><button id="algPPO" class="on">PPO</button><button id="algGRPO">GRPO</button></div>
+    <p id="algText" style="min-height:3.2em"></p>
+    <div class="mem" aria-label="GPU memory"><i id="memP" style="width:45%;background:var(--c3)">policy</i><i id="memC" style="width:45%;background:var(--c4)">critic</i></div>
+    <p style="color:var(--muted);font-size:14px;margin:6px 0 0">GPU memory (illustrative)</p>
+  </div>
+
+  <div class="card note" style="--c: var(--c1)">
+    <div class="head"><div class="num">5</div><h3>The GRPO advantage</h3></div>
+    <p>Hover or tab to each coloured part.</p>
+    <div class="formula" aria-label="A sub i equals r sub i minus the mean of the group rewards, divided by the standard deviation of the group rewards plus epsilon">
+      <span class="t" tabindex="0" style="color:var(--c1)">A<sub>i</sub><span class="tip">advantage of answer i</span></span>
+      <span>=</span>
+      <span class="frac">
+        <span class="over"><span class="t" tabindex="0" style="color:var(--c3)">r<sub>i</sub><span class="tip">reward of answer i</span></span> − <span class="t" tabindex="0" style="color:var(--c2)">mean(r)<span class="tip">average reward of the group</span></span></span>
+        <span class="under"><span class="t" tabindex="0" style="color:var(--c4)">std(r)<span class="tip">how spread out the group is</span></span> + <span class="t" tabindex="0" style="color:var(--c5)">ε<span class="tip">tiny number: never divide by 0</span></span></span>
+      </span>
+    </div>
+    <p>Every token in answer <i>i</i> gets the same A<sub>i</sub>. Worked examples (click a row to load it in the Playground):</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Group</th><th>Rewards</th><th>Mean</th><th>Advantages (population std)</th><th>Lesson</th></tr></thead>
+      <tbody id="exRows"></tbody>
+    </table></div>
+    <p style="color:var(--muted);font-size:14px">numpy defaults to population std (ddof=0); PyTorch and TRL use sample std (ddof=1), so their numbers are a bit smaller, e.g. +1.50 instead of +1.73. Signs and ranking never change.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--bad)">
+    <div class="head"><div class="num">6</div><h3>The zero-signal trap</h3></div>
+    <p>If every answer to a prompt scores the same, every advantage is 0. That prompt teaches nothing, but you paid for all G rollouts. Too-easy and too-hard prompts both waste compute; learning happens on mixed groups. Try the difficulty simulator in the Playground to see how sharply this bites.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--c5)">
+    <div class="head"><div class="num">7</div><h3>Flip cards: mistakes and one-liners</h3></div>
+    <div class="flips" id="flips"></div>
+  </div>
+</section>
+
+<!-- PLAYGROUND -->
+<section class="view" id="v-playground">
+  <span class="eyebrow" style="--c: var(--c4)">Day 1 · Playground</span>
+  <h2>Break the formula with your own numbers</h2>
+  <p class="lead">Drag the rewards and watch every advantage respond. Then see how prompt difficulty decides whether a group teaches anything.</p>
+  <div class="grid2">
+    <div class="card" style="--c: var(--c4)">
+      <h3>Advantage calculator</h3>
+      <div class="row" style="margin:12px 0">
+        <span>Presets:</span>
+        <button class="btn ghost" data-pre="1,0,0,0">G1</button><button class="btn ghost" data-pre="1,1,1,0">G2</button>
+        <button class="btn ghost" data-pre="1,0.2,0,0">G3</button><button class="btn ghost" data-pre="1,1,1,1">G4</button>
+        <button class="btn ghost" data-pre="0,0,0,0">G5</button><button class="btn ghost" data-pre="1,0,1,0,0,0,1,0">G=8</button>
+      </div>
+      <div class="row" style="margin-bottom:12px">
+        <label for="gSel">Group size G</label>
+        <select id="gSel" style="font:inherit;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:6px 10px">
+          <option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>8</option></select>
+        <div class="seg" role="group" aria-label="Standard deviation"><button id="stdPop" class="on">population std</button><button id="stdSamp">sample std (TRL)</button></div>
+      </div>
+      <div class="sliders" id="sliders"></div>
+    </div>
+    <div class="card" style="--c: var(--c1)">
+      <div class="stats"><div class="stat" style="--c:var(--c2)">mean<b id="sMean">0</b></div><div class="stat" style="--c:var(--c4)">std<b id="sStd">0</b></div><div class="stat" style="--c:var(--c1)">sum of A<b id="sSum">0</b></div></div>
+      <canvas class="chart" id="advChart" aria-label="Bar chart of advantages"></canvas>
+      <p id="advMsg" style="margin:6px 0 0;font-weight:700"></p>
+    </div>
+  </div>
+
+  <div class="card" style="--c: var(--c2); margin-top:18px">
+    <h3>Difficulty simulator</h3>
+    <p style="color:var(--muted)">p is the chance the model solves one sample of this prompt. A group is useful only if it is mixed. The chance of that is 1 − p<sup>G</sup> − (1 − p)<sup>G</sup>.</p>
+    <div class="grid2" style="align-items:center">
+      <div>
+        <div class="sl"><label for="pSl">p (solve rate)</label><input id="pSl" type="range" min="0" max="1" step="0.01" value="0.9"><output id="pOut">0.90</output></div>
+        <div class="row" style="margin:10px 0"><label for="g2">G</label>
+          <select id="g2" style="font:inherit;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:6px 10px"><option>4</option><option selected>8</option><option>16</option></select>
+          <button class="btn" style="--c: var(--c2)" id="sampleBtn">Sample a group</button></div>
+        <div class="dots" id="dots"></div>
+        <div class="stats"><div class="stat" style="--c:var(--c5)">P(mixed group)<b id="pMix">0</b></div><div class="stat" style="--c:var(--bad)">wasted groups<b id="pWaste">0</b></div><div class="stat" style="--c:var(--c3)">last group<b id="lastG">–</b></div></div>
+      </div>
+      <canvas class="chart" id="mixChart" aria-label="Curve of mixed-group probability against p"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- QUIZ -->
+<section class="view" id="v-quiz">
+  <span class="eyebrow" style="--c: var(--c2)">Day 1 · Quiz</span>
+  <h2>10 questions. Score 8+ to pass.</h2>
+  <p class="lead">Multiple choice plus three you compute yourself. Use the Playground to check your working afterwards, not during.</p>
+  <div class="qwrap card" id="quiz"></div>
+</section>
+
+<!-- CHECKPOINT -->
+<section class="view" id="v-checkpoint">
+  <span class="eyebrow" style="--c: var(--c5)">Day 1 · Coding checkpoint</span>
+  <h2>Write the GRPO advantage yourself</h2>
+  <p class="lead">About 30 minutes. No AI help until the tests pass. Then paste your code, test output and five sentences into the chat for review.</p>
+  <div class="grid2">
+    <div class="card" style="--c: var(--c5)">
+      <h3>Task</h3>
+      <ol>
+        <li>In <code>notes/grpo_advantage.py</code>, write <code>grpo_advantages(rewards, eps=1e-6)</code>: one group's rewards in, one advantage per completion out, using numpy's population std.</li>
+        <li>Run it on the five lecture groups. Write one sentence per group in <code>notes/day1.md</code>.</li>
+        <li><b>Stretch:</b> <code>grpo_advantages_batch(rewards, group_size)</code> normalises within each group of a flat list, never across the batch.</li>
+      </ol>
+      <h3 style="margin-top:16px">Your checklist</h3>
+      <div class="checks" id="checks">
+        <label><input type="checkbox" id="c1"> All 6 core tests pass</label>
+        <label><input type="checkbox" id="c2"> Five sentences written</label>
+        <label><input type="checkbox" id="c3"> Stretch test passes</label>
+        <label><input type="checkbox" id="c4"> Code sent to Claude for review</label>
+      </div>
+    </div>
+    <div>
+      <p style="margin-top:0"><b>Acceptance tests</b>: save as <code>notes/test_grpo_advantage.py</code>, run <code>pytest</code>.</p>
+      <div class="codebox"><button class="btn" style="--c: var(--c5)" data-copy="tests">Copy</button><pre class="code" id="tests"></pre></div>
+      <p><b>Stretch test</b></p>
+      <div class="codebox"><button class="btn" style="--c: var(--c5)" data-copy="stretch">Copy</button><pre class="code" id="stretch"></pre></div>
+      <p style="color:var(--muted);font-size:14px">Checked against a reference solution: all 7 pass, and a version that normalises across the whole batch fails the stretch test.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="site-foot"><div class="in"><span>RLE Lab · Day 1 of 7</span><a href="../../index.html">Back to the roadmap</a></div></footer>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+(() => {
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const store = { get: (k, d) => window.RLE.store.get("d1-" + k, d), set: (k, v) => window.RLE.store.set("d1-" + k, v) };
+const CSS = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* ---------- progress ---------- */
+const VIEWS = ["lecture", "notes", "playground", "quiz", "checkpoint"];
+let done = store.get("done", {});
+function mark(v) { if (!done[v]) { done[v] = true; store.set("done", done); paintProg(); } }
+function paintProg() {
+  const n = VIEWS.filter(v => done[v]).length;
+  $("#progTxt").textContent = `${n} of 5 done`;
+  $("#ring").style.setProperty("--p", n * 20);
+  $("#ringPct").textContent = n * 20 + "%";
+  $$(".tab").forEach(t => t.classList.toggle("done", !!done[t.dataset.v]));
+}
+
+/* ---------- routing ---------- */
+function route() {
+  const h = location.hash.slice(1);
+  const v = VIEWS.includes(h) ? h : "lecture";
+  $$(".view").forEach(s => s.classList.toggle("on", s.id === "v-" + v));
+  $$(".tab").forEach(t => { if (t.dataset.v === v) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current"); });
+  if (v === "notes") setTimeout(() => mark("notes"), 20000);
+  if (v === "playground") { drawAdv(); drawMix(); }
+  window.scrollTo({ top: 0 });
+}
+addEventListener("hashchange", route);
+
+/* ---------- lecture ---------- */
+const CH = [["Intro", 0], ["Basics: what a policy is", 35.3], ["Why RL", 77.9], ["The loop, six steps", 116.3], ["RLHF vs RLVR", 192.0], ["PPO vs GRPO", 231.4], ["The advantage formula", 271.6], ["Worked examples", 289.2], ["Zero-signal trap", 342.3], ["Recap", 379.0], ["Your checkpoint", 398.3]];
+const vid = $("#vid");
+const PARTS = [["day1_part1.mp4", 0], ["day1_part2.mp4", 192.0]], TOTAL = 421.6;
+let part = 0;
+const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+function loadPart(i, at = 0, play = false) {
+  if (part !== i) { part = i; vid.src = PARTS[i][0]; $("#partNo").textContent = i + 1; }
+  const go = () => { vid.currentTime = at; if (play) vid.play().catch(() => {}); };
+  if (vid.readyState >= 1) go(); else vid.addEventListener("loadedmetadata", go, { once: true });
+}
+function seekGlobal(t) { const i = t >= PARTS[1][1] ? 1 : 0; loadPart(i, t - PARTS[i][1], true); }
+$("#chapters").innerHTML = CH.map(([n, t], i) => `<button class="chap" data-t="${t}" data-i="${i}"><time>${fmt(t)}</time><span>${n}</span></button>`).join("");
+$$(".chap").forEach(b => b.addEventListener("click", () => seekGlobal(+b.dataset.t)));
+vid.addEventListener("ended", () => { if (part === 0) loadPart(1, 0, true); else mark("lecture"); });
+vid.addEventListener("timeupdate", () => {
+  const t = PARTS[part][1] + vid.currentTime; let cur = 0; CH.forEach(([, s], i) => { if (t >= s) cur = i; });
+  $$(".chap").forEach((b, i) => b.classList.toggle("now", i === cur));
+  if (t / TOTAL > 0.9) mark("lecture");
+});
+
+/* ---------- notes: probabilities ---------- */
+const TOK = ["42", "41", "24", "7", "forty"], COLS = ["--c1", "--c2", "--c3", "--c4", "--c5"];
+const BASE = [.55, .18, .12, .08, .07];
+let probs = BASE.slice();
+$("#probs").innerHTML = TOK.map((t, i) => `<div class="pb" style="--c: var(${COLS[i]})"><strong id="pv${i}"></strong><div class="b" id="pb${i}"></div><span>${t}</span></div>`).join("");
+function paintProbs() { probs.forEach((p, i) => { $("#pb" + i).style.height = (p * 170 + 4) + "px"; $("#pv" + i).textContent = Math.round(p * 100) + "%"; }); }
+function nudge(i, dir) { probs[i] *= dir > 0 ? 1.35 : 0.6; const s = probs.reduce((a, b) => a + b, 0); probs = probs.map(p => p / s); paintProbs(); }
+$("#nudgeUp").onclick = () => nudge(0, 1); $("#nudgeDown").onclick = () => nudge(1, -1); $("#nudgeReset").onclick = () => { probs = BASE.slice(); paintProbs(); };
+paintProbs();
+
+/* ---------- notes: loop ---------- */
+const STEPS = [
+  ["Prompts", "--c3", "Take a batch of tasks from the dataset. This week: GSM8K math word problems, each with one checkable number as the answer."],
+  ["Rollouts", "--c2", "The policy samples G completions per prompt (G = 8 or 16 is common). Sampling at temperature above 0 is what makes the answers differ."],
+  ["Rewards", "--c4", "A verifier scores every completion. For math: does the final number match the gold answer? This step decides what the model learns."],
+  ["Advantages", "--c1", "Each reward becomes an advantage: how much better or worse this completion was than its siblings for the same prompt."],
+  ["Update", "--good", "A policy-gradient step makes positive-advantage tokens more likely and negative ones less likely. Clipping caps each step; a KL penalty keeps the model near its starting point."],
+  ["Repeat", "--c5", "Sample again from the updated model. Thousands of iterations."]
+];
+const svg = $("#loopSvg"), NS = "http://www.w3.org/2000/svg";
+const cx = 230, cy = 230, R = 165;
+let sel = 0, comet = 0;
+function el(t, a) { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); return e; }
+const ringC = el("circle", { cx, cy, r: R, fill: "none", "stroke-width": 6 }); ringC.style.stroke = "var(--line)"; svg.appendChild(ringC);
+const glow = el("circle", { r: 12 }); glow.style.fill = "var(--accent)"; glow.style.filter = "drop-shadow(0 0 8px var(--accent))";
+const center = el("text", { x: cx, y: cy + 8, "text-anchor": "middle", "font-size": 22, "font-weight": 700, "font-family": "IBM Plex Sans, sans-serif" }); center.style.fill = "var(--muted)"; center.textContent = "× 1000s";
+svg.appendChild(center); svg.appendChild(glow);
+STEPS.forEach(([n, c], i) => {
+  const a = -Math.PI / 2 + i * Math.PI / 3, x = cx + R * Math.cos(a), y = cy + R * Math.sin(a);
+  const g = el("g", { class: "node", tabindex: 0, role: "button", "aria-label": `Step ${i + 1}: ${n}` });
+  const mc = el("circle", { cx: x, cy: y, r: 46, class: "main" }); mc.style.fill = `var(${c})`; g.appendChild(mc);
+  const t1 = el("text", { x, y: y - 2, "text-anchor": "middle", "font-size": 26, "font-weight": 800, "font-family": "Bricolage Grotesque, sans-serif" }); t1.style.fill = "var(--on-color)"; t1.textContent = i + 1;
+  const t2 = el("text", { x, y: y + 20, "text-anchor": "middle", "font-size": 13, "font-weight": 700, "font-family": "IBM Plex Sans, sans-serif" }); t2.style.fill = "var(--on-color)"; t2.textContent = n;
+  g.append(t1, t2);
+  const pick = () => selectStep(i); g.addEventListener("click", pick); g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+  svg.appendChild(g);
+});
+function selectStep(i) { sel = i; const [n, c, txt] = STEPS[i]; $("#stepPill").textContent = "Step " + (i + 1); $("#stepPill").style.setProperty("--c", `var(${c})`); $("#stepTitle").textContent = n; $("#stepText").textContent = txt; $$(".node").forEach((g, k) => g.classList.toggle("sel", k === i)); }
+selectStep(0);
+function tickComet() { comet += reduce ? 0 : 0.012; const a = -Math.PI / 2 + comet; glow.setAttribute("cx", cx + R * Math.cos(a)); glow.setAttribute("cy", cy + R * Math.sin(a)); requestAnimationFrame(tickComet); }
+tickComet();
+
+/* ---------- notes: PPO vs GRPO ---------- */
+const ALG = { PPO: "PPO trains a second large network, the critic (value model), to predict the baseline. Advantage ≈ reward − critic's estimate. Costs memory and a second training problem.",
+  GRPO: "GRPO (from the DeepSeekMath paper, used for DeepSeek-R1) drops the critic. It samples G answers to the same prompt and uses the group's mean reward as the baseline. The critic's memory is freed." };
+function setAlg(a) { $("#algPPO").classList.toggle("on", a === "PPO"); $("#algGRPO").classList.toggle("on", a === "GRPO"); $("#algText").textContent = ALG[a]; $("#memC").style.width = a === "PPO" ? "45%" : "0%"; $("#memC").textContent = a === "PPO" ? "critic" : ""; }
+$("#algPPO").onclick = () => setAlg("PPO"); $("#algGRPO").onclick = () => setAlg("GRPO"); setAlg("PPO");
+
+/* ---------- maths ---------- */
+function stats(r, ddof) { const n = r.length, m = r.reduce((a, b) => a + b, 0) / n; const v = r.reduce((a, b) => a + (b - m) ** 2, 0) / Math.max(1, n - ddof); return { m, s: Math.sqrt(v) }; }
+function advs(r, ddof = 0, eps = 1e-6) { const { m, s } = stats(r, ddof); return r.map(x => (x - m) / (s + eps)); }
+const f2 = x => (Math.abs(x) < 0.005 ? 0 : x).toFixed(2), sg = x => (x > 0.004 ? "+" : "") + f2(x);
+
+/* ---------- notes: examples table ---------- */
+const EX = [[[1, 0, 0, 0], "A rare success gets a big push up"], [[1, 1, 1, 0], "A rare failure gets a big push down"], [[1, 0.2, 0, 0], "A small bonus ranks a wrong answer above others"], [[1, 1, 1, 1], "No signal"], [[0, 0, 0, 0], "No signal"]];
+$("#exRows").innerHTML = EX.map(([r, l], i) => `<tr tabindex="0" style="cursor:pointer" data-r="${r}"><td><b>${i + 1}</b></td><td><code>[${r.join(", ")}]</code></td><td>${stats(r, 0).m.toFixed(2)}</td><td><code>[${advs(r).map(sg).join(", ")}]</code></td><td>${l}</td></tr>`).join("");
+$$("#exRows tr").forEach(tr => { const go = () => { loadPreset(tr.dataset.r.split(",").map(Number)); location.hash = "playground"; }; tr.onclick = go; tr.onkeydown = e => { if (e.key === "Enter") go(); }; });
+
+/* ---------- notes: flip cards ---------- */
+const FL = [["Forgot ε?", "mistake", "An all-same group divides by zero and puts NaN into training.", "--bad"],
+  ["Normalised the whole batch?", "mistake", "GRPO compares siblings, not strangers: normalise within each prompt's group.", "--bad"],
+  ["Reward up = better model?", "mistake", "Check correctness separately. A bonus term can rise while accuracy stays flat.", "--bad"],
+  ["The RL loop", "one-liner", "Sample rollouts, score them, turn scores into advantages, take a clipped policy-gradient step, repeat.", "--c3"],
+  ["RLHF vs RLVR", "one-liner", "RLHF learns its reward from human preferences; RLVR computes it with a program.", "--c2"],
+  ["GRPO vs PPO", "one-liner", "GRPO replaces PPO's critic with the group's mean reward as the baseline.", "--c1"],
+  ["Zero-signal groups", "one-liner", "If every answer to a prompt scores the same, every advantage is zero and nothing is learned.", "--c4"],
+  ["Population vs sample std", "mistake", "numpy uses ddof=0, PyTorch ddof=1. Numbers differ, signs and ranking don't. Know which you're comparing.", "--bad"]];
+$("#flips").innerHTML = FL.map(([f, k, b, c]) => `<button class="flip" style="--c: var(${c})" aria-label="${f}: flip to reveal"><div class="in"><div class="f">${f}<small>${k} · tap to flip</small></div><div class="bk">${b}</div></div></button>`).join("");
+$$(".flip").forEach(b => b.onclick = () => b.classList.toggle("on"));
+
+/* ---------- playground: calculator ---------- */
+let G = 4, rewards = [1, 0, 0, 0], ddof = 0;
+function buildSliders() {
+  $("#sliders").innerHTML = rewards.map((r, i) => `<div class="sl"><label for="r${i}">answer ${i + 1}</label><input id="r${i}" type="range" min="0" max="1" step="0.05" value="${r}"><output id="o${i}">${r.toFixed(2)}</output></div>`).join("");
+  rewards.forEach((_, i) => $("#r" + i).addEventListener("input", e => { rewards[i] = +e.target.value; $("#o" + i).textContent = rewards[i].toFixed(2); drawAdv(); mark("playground"); }));
+}
+function loadPreset(arr) { rewards = arr.slice(); G = arr.length; $("#gSel").value = String(G); buildSliders(); drawAdv(); }
+$$("[data-pre]").forEach(b => b.onclick = () => { loadPreset(b.dataset.pre.split(",").map(Number)); mark("playground"); });
+$("#gSel").onchange = e => { G = +e.target.value; rewards = Array.from({ length: G }, (_, i) => rewards[i] ?? 0); buildSliders(); drawAdv(); };
+$("#stdPop").onclick = () => { ddof = 0; $("#stdPop").classList.add("on"); $("#stdSamp").classList.remove("on"); drawAdv(); };
+$("#stdSamp").onclick = () => { ddof = 1; $("#stdSamp").classList.add("on"); $("#stdPop").classList.remove("on"); drawAdv(); };
+let shown = null;
+function drawAdv() {
+  const cv = $("#advChart"), dpr = devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight; if (!W) return;
+  cv.width = W * dpr; cv.height = H * dpr; const x = cv.getContext("2d"); x.scale(dpr, dpr);
+  const A = advs(rewards, ddof), { m, s } = stats(rewards, ddof);
+  $("#sMean").textContent = m.toFixed(3); $("#sStd").textContent = s.toFixed(3); $("#sSum").textContent = f2(A.reduce((a, b) => a + b, 0));
+  const allSame = s < 1e-9;
+  const big = A.reduce((bi, v, i) => Math.abs(v) > Math.abs(A[bi]) ? i : bi, 0);
+  $("#advMsg").textContent = allSame ? "Every advantage is 0: this group teaches nothing." : `Biggest push: answer ${big + 1} (${sg(A[big])}). Rarer outcomes get bigger advantages.`;
+  $("#advMsg").style.color = allSame ? CSS("--bad") : CSS("--good");
+  const target = A.slice(); if (!shown || shown.length !== target.length) shown = target.map(() => 0);
+  const lim = Math.max(2, ...A.map(a => Math.ceil(Math.abs(a))));
+  const draw = () => {
+    x.clearRect(0, 0, W, H); const zy = H / 2, sc = (H / 2 - 34) / lim;
+    x.strokeStyle = CSS("--line"); x.lineWidth = 1;
+    for (let k = -lim; k <= lim; k++) { const yy = zy - k * sc; x.beginPath(); x.moveTo(30, yy); x.lineTo(W, yy); x.stroke(); x.fillStyle = CSS("--muted"); x.font = "12px IBM Plex Sans, sans-serif"; x.fillText(String(k), 6, yy + 4); }
+    x.strokeStyle = CSS("--muted"); x.beginPath(); x.moveTo(30, zy); x.lineTo(W, zy); x.stroke();
+    const n = shown.length, slot = (W - 40) / n, bw = Math.min(70, slot * .6); let moving = false;
+    shown.forEach((v, i) => {
+      const nv = v + (target[i] - v) * (reduce ? 1 : .18); if (Math.abs(nv - target[i]) > .002) moving = true; shown[i] = nv;
+      const cxx = 40 + slot * (i + .5), h = nv * sc, col = nv >= 0 ? CSS("--good") : CSS("--bad");
+      x.shadowColor = col; x.shadowBlur = 16; x.fillStyle = col;
+      x.beginPath(); x.roundRect(cxx - bw / 2, Math.min(zy, zy - h), bw, Math.abs(h) || 2, 8); x.fill(); x.shadowBlur = 0;
+      x.fillStyle = CSS("--ink"); x.font = "700 14px IBM Plex Sans, sans-serif"; x.textAlign = "center";
+      x.fillText(sg(nv), cxx, nv >= 0 ? zy - h - 8 : zy - h + 18); x.fillStyle = CSS("--muted"); x.font = "12px IBM Plex Sans, sans-serif"; x.fillText("#" + (i + 1), cxx, H - 6); x.textAlign = "left";
+    });
+    if (moving) requestAnimationFrame(draw);
+  };
+  draw();
+}
+buildSliders();
+
+/* ---------- playground: difficulty ---------- */
+const pmix = (p, g) => 1 - p ** g - (1 - p) ** g;
+function drawMix() {
+  const p = +$("#pSl").value, g = +$("#g2").value; $("#pOut").textContent = p.toFixed(2);
+  const pm = pmix(p, g); $("#pMix").textContent = (pm * 100).toFixed(1) + "%"; $("#pWaste").textContent = ((1 - pm) * 100).toFixed(1) + "%";
+  const cv = $("#mixChart"), dpr = devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight; if (!W) return;
+  cv.width = W * dpr; cv.height = H * dpr; const x = cv.getContext("2d"); x.scale(dpr, dpr);
+  const L = 40, B = H - 30, T = 14, Rr = W - 10, X = v => L + v * (Rr - L), Y = v => B - v * (B - T);
+  x.fillStyle = CSS("--muted"); x.font = "12px IBM Plex Sans, sans-serif";
+  [0, .5, 1].forEach(v => { x.strokeStyle = CSS("--line"); x.beginPath(); x.moveTo(L, Y(v)); x.lineTo(Rr, Y(v)); x.stroke(); x.fillText(v * 100 + "%", 4, Y(v) + 4); });
+  x.textAlign = "center"; [0, .5, 1].forEach(v => x.fillText("p=" + v, X(v), H - 8)); x.textAlign = "left";
+  const grd = x.createLinearGradient(L, 0, Rr, 0); grd.addColorStop(0, CSS("--bad")); grd.addColorStop(.5, CSS("--good")); grd.addColorStop(1, CSS("--bad"));
+  x.beginPath(); for (let k = 0; k <= 200; k++) { const v = k / 200; const yy = Y(pmix(v, g)); k ? x.lineTo(X(v), yy) : x.moveTo(X(v), yy); }
+  x.lineTo(X(1), B); x.lineTo(X(0), B); x.closePath(); x.globalAlpha = .16; x.fillStyle = CSS("--c2"); x.fill(); x.globalAlpha = 1;
+  x.beginPath(); for (let k = 0; k <= 200; k++) { const v = k / 200; const yy = Y(pmix(v, g)); k ? x.lineTo(X(v), yy) : x.moveTo(X(v), yy); }
+  x.strokeStyle = grd; x.lineWidth = 4; x.stroke();
+  x.fillStyle = CSS("--accent"); x.shadowColor = CSS("--accent"); x.shadowBlur = 12; x.beginPath(); x.arc(X(p), Y(pm), 8, 0, 7); x.fill(); x.shadowBlur = 0;
+  x.fillStyle = CSS("--ink"); x.font = "700 13px IBM Plex Sans, sans-serif"; x.fillText("P(mixed group), G=" + g, L + 6, T + 14);
+}
+$("#pSl").oninput = () => { drawMix(); mark("playground"); }; $("#g2").onchange = drawMix;
+$("#sampleBtn").onclick = () => {
+  const p = +$("#pSl").value, g = +$("#g2").value; const o = Array.from({ length: g }, () => Math.random() < p);
+  $("#dots").innerHTML = o.map((w, i) => `<i style="background:var(${w ? "--good" : "--bad"});animation-delay:${i * 40}ms">${w ? "✓" : "✗"}</i>`).join("");
+  const mixed = o.some(Boolean) && !o.every(Boolean); $("#lastG").textContent = mixed ? "mixed: signal" : "all same: wasted"; $("#lastG").style.color = mixed ? CSS("--good") : CSS("--bad"); mark("playground");
+};
+addEventListener("resize", () => { drawAdv(); drawMix(); });
+addEventListener("themechange", () => { drawAdv(); drawMix(); });
+
+/* ---------- quiz ---------- */
+const Q = [
+  { q: "In GRPO, what serves as the baseline for judging a completion?", o: ["A separately trained critic (value) network", "The mean reward of the other completions sampled for the same prompt", "The average reward across the whole training batch", "The reward the reference model would have received"], a: 1, e: "GRPO drops PPO's critic and uses the group's own mean reward as the baseline: each answer is compared with its siblings for the same prompt." },
+  { q: "A policy, in LLM reinforcement learning, is…", o: ["The rule set the verifier uses", "The model being trained: it assigns a probability to each next token", "The dataset of prompts", "The KL penalty schedule"], a: 1, e: "The policy is the model itself. RL changes its token probabilities toward what scores well." },
+  { q: "A group's rewards are [1, 1, 1, 1]. What are the advantages (with ε in the denominator)?", o: ["All +1", "All 0", "NaN, because the std is zero", "+1.73 for the first, −0.58 for the rest"], a: 1, e: "Every reward equals the mean, so every numerator is 0. ε keeps the denominator above zero, so the result is 0, not NaN." },
+  { q: "In the group [1, 1, 1, 0], which completion gets the largest-magnitude advantage?", o: ["Each correct answer, about +1.73", "The wrong answer, about −1.73", "All four get the same magnitude", "None: the group gives no signal"], a: 1, e: "The rare outcome gets the big push: the single failure gets about −1.73 (population std); each success about +0.58." },
+  { q: "What is the core difference between RLHF and RLVR?", o: ["RLHF uses PPO; RLVR can only use GRPO", "RLHF's reward comes from a model trained on human preferences; RLVR's comes from a program that checks the answer", "RLVR needs human labels for every rollout", "RLHF works only for math and code"], a: 1, e: "RLHF learns its reward from preference data; RLVR computes it. The algorithm choice is separate." },
+  { q: "What does the KL penalty in the update step do?", o: ["Keeps the policy from drifting too far from the reference model", "Increases the reward for correct answers", "Normalises advantages within each group", "Removes prompts that every completion solves"], a: 0, e: "KL measures how far the policy has moved from a reference model; penalising it limits drift, which also slows reward hacking." },
+  { q: "Total reward climbs during training but held-out accuracy stays flat. Most likely explanation?", o: ["The learning rate is too low", "The model is improving a bonus term or exploiting the verifier rather than solving more problems", "The KL penalty is too strong", "G is too large"], a: 1, e: "Reward rising without real accuracy is the classic sign of reward hacking. Log each reward component separately and check correctness independently." },
+  { num: true, q: "Rewards [1, 0, 0, 0], population std. What is the advantage of answer 1? (2 decimals)", ans: 1.73, tol: 0.02, e: "mean = 0.25, std = √(0.25 × 0.75) ≈ 0.433, so A₁ = 0.75 / 0.433 ≈ 1.73." },
+  { num: true, q: "Rewards [0, 0, 1, 1], population std. What is the advantage of answer 3? (2 decimals)", ans: 1.00, tol: 0.02, e: "mean = 0.5, std = 0.5, so A₃ = (1 − 0.5) / 0.5 = 1.00." },
+  { num: true, q: "A prompt has solve rate p = 0.5 and G = 8. What is the probability the group is mixed? (2 decimals)", ans: 0.99, tol: 0.01, e: "1 − 0.5⁸ − 0.5⁸ = 1 − 2/256 ≈ 0.992. At p = 0.5 almost every group gives signal." }
+];
+let qi = 0, score = 0, answered = false, best = store.get("best", 0);
+function renderQ() {
+  const box = $("#quiz");
+  if (qi >= Q.length) {
+    const pass = score >= 8; best = Math.max(best, score); store.set("best", best); if (pass) { mark("quiz"); burst(); }
+    box.innerHTML = `<div class="score"><div class="big">${score}/${Q.length}</div><h3>${pass ? "Passed. Nice work." : "Not yet: 8 to pass."}</h3><p style="color:var(--muted)">Best so far: ${best}/${Q.length}. ${pass ? "Next: the coding checkpoint." : "Re-read the notes on the ones you missed, then retry."}</p><div class="row" style="justify-content:center"><button class="btn" style="--c:var(--c2)" id="retry">Retry quiz</button>${pass ? '<a class="btn good" href="#checkpoint">Go to checkpoint</a>' : ""}</div></div>`;
+    $("#retry").onclick = () => { qi = 0; score = 0; renderQ(); }; return;
+  }
+  const it = Q[qi]; answered = false;
+  if (!it.num) { it.ord = it.o.map((_, i) => i).sort(() => Math.random() - .5); }
+  box.innerHTML = `<div class="qhead"><span class="pill" style="--c:var(--c2)">Question ${qi + 1} of ${Q.length}</span><div class="qbar"><i style="width:${qi / Q.length * 100}%"></i></div><b style="font-variant-numeric:tabular-nums">${score} pts</b></div>
+    <h3 style="font-size:24px">${it.q}</h3>
+    ${it.num ? `<form class="numin" id="numf"><label for="numv" class="sr" style="position:absolute;left:-9999px">Your answer</label><input id="numv" inputmode="decimal" placeholder="e.g. 0.50" autocomplete="off"><button class="btn" style="--c:var(--c2)">Check</button></form>` : `<div class="opts">${(it.ord || []).map((oi, k) => `<button class="opt" data-i="${oi}">${String.fromCharCode(65 + k)}. ${it.o[oi]}</button>`).join("")}</div>`}
+    <div id="fbox"></div>`;
+  if (it.num) { $("#numv").focus(); $("#numf").onsubmit = e => { e.preventDefault(); if (answered) return; const v = parseFloat($("#numv").value.replace(",", ".")); if (isNaN(v)) { $("#fbox").innerHTML = `<div class="fb" style="--c:var(--c4)">Type a number, like 0.50.</div>`; return; } finish(Math.abs(v - it.ans) <= it.tol); }; }
+  else $$(".opt").forEach(b => b.onclick = () => { if (answered) return; const i = +b.dataset.i; $$(".opt").forEach(x => { x.disabled = true; if (+x.dataset.i === it.a) x.classList.add("right"); }); if (i !== it.a) b.classList.add("wrong"); finish(i === it.a); });
+}
+function finish(ok) {
+  answered = true; const it = Q[qi]; if (ok) score++;
+  $("#fbox").innerHTML = `<div class="fb" style="--c:var(${ok ? "--good" : "--bad"})"><b>${ok ? "Correct." : "Not quite."}</b> ${it.num ? `Answer: ${it.ans.toFixed(2)}. ` : ""}${it.e}</div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" style="--c:var(--c2)" id="next">${qi + 1 < Q.length ? "Next question" : "See score"}</button></div>`;
+  if (ok && !reduce) miniBurst(); $("#next").focus(); $("#next").onclick = () => { qi++; renderQ(); };
+}
+renderQ();
+
+/* ---------- confetti ---------- */
+const cc = $("#confetti"), cx2 = cc.getContext("2d"); let bits = [];
+function burst(n = 160) { if (reduce) return; cc.width = innerWidth; cc.height = innerHeight; for (let i = 0; i < n; i++) bits.push({ x: innerWidth / 2, y: innerHeight / 3, vx: (Math.random() - .5) * 16, vy: Math.random() * -14 - 4, c: ["--c1", "--c2", "--c3", "--c4", "--c5"].map(CSS)[i % 5], r: Math.random() * 6, life: 120 }); if (bits.length === n) loopConf(); }
+function miniBurst() { burst(40); }
+function loopConf() { cx2.clearRect(0, 0, cc.width, cc.height); bits.forEach(b => { b.x += b.vx; b.y += b.vy; b.vy += .45; b.life--; cx2.fillStyle = b.c; cx2.fillRect(b.x, b.y, 8, 5); }); bits = bits.filter(b => b.life > 0); if (bits.length) requestAnimationFrame(loopConf); else cx2.clearRect(0, 0, cc.width, cc.height); }
+
+/* ---------- checkpoint ---------- */
+const TESTS = `import numpy as np
+from grpo_advantage import grpo_advantages
+
+
+def close(a, b):
+    return np.allclose(a, b, atol=1e-2)
+
+
+def test_one_success():
+    assert close(grpo_advantages([1, 0, 0, 0]), [1.732, -0.577, -0.577, -0.577])
+
+
+def test_one_failure():
+    assert close(grpo_advantages([1, 1, 1, 0]), [0.577, 0.577, 0.577, -1.732])
+
+
+def test_format_bonus():
+    assert close(grpo_advantages([1, 0.2, 0, 0]), [1.698, -0.243, -0.728, -0.728])
+
+
+def test_all_same_gives_zero_not_nan():
+    for g in ([1, 1, 1, 1], [0, 0, 0, 0], [0.5] * 8):
+        a = np.asarray(grpo_advantages(g))
+        assert not np.isnan(a).any() and np.allclose(a, 0)
+
+
+def test_advantages_sum_to_zero():
+    assert abs(np.sum(grpo_advantages([0.3, 0.9, 0.1, 0.5, 0.7]))) < 1e-6
+
+
+def test_ranking_preserved():
+    r = [0.2, 0.9, 0.5]
+    assert np.argsort(grpo_advantages(r)).tolist() == np.argsort(r).tolist()
+`;
+const STRETCH = `from grpo_advantage import grpo_advantages_batch
+
+
+def test_batch_normalizes_per_group():
+    flat = [1, 0, 0, 0, 1, 1, 1, 1]  # two prompts, G = 4
+    a = np.asarray(grpo_advantages_batch(flat, group_size=4))
+    assert np.allclose(a[:4], grpo_advantages([1, 0, 0, 0]), atol=1e-6)
+    assert np.allclose(a[4:], 0)  # the all-correct group must stay at zero
+`;
+function hl(src) {
+  const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  return src.split("\n").map(line => {
+    const ci = line.indexOf("#"); let code = ci >= 0 ? line.slice(0, ci) : line, cm = ci >= 0 ? line.slice(ci) : "";
+    code = esc(code).replace(/\b(import|from|def|assert|for|in|and|not|return)\b/g, '<span class="kw">$1</span>').replace(/\b(grpo_advantages_batch|grpo_advantages|close|test_\w+)\b/g, '<span class="fn">$1</span>').replace(/\b(\d+\.?\d*(e-?\d+)?)\b/g, '<span class="nm">$1</span>');
+    return code + (cm ? `<span class="cm">${esc(cm)}</span>` : "");
+  }).join("\n");
+}
+$("#tests").innerHTML = hl(TESTS); $("#stretch").innerHTML = hl(STRETCH);
+$$("[data-copy]").forEach(b => b.onclick = async () => { const t = b.dataset.copy === "tests" ? TESTS : STRETCH; try { await navigator.clipboard.writeText(t); b.textContent = "Copied"; } catch (e) { b.textContent = "Select and copy"; } setTimeout(() => b.textContent = "Copy", 1800); });
+let ck = store.get("checks", {});
+["c1", "c2", "c3", "c4"].forEach(id => { const c = $("#" + id); c.checked = !!ck[id]; c.onchange = () => { ck[id] = c.checked; store.set("checks", ck); if (ck.c1 && ck.c2) mark("checkpoint"); }; });
+
+paintProg(); route();
+})();
+
+});
+</script>
+</body>
+</html>

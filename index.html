@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RLE Lab</title>
+<meta name="description" content="A one-week, hands-on path to building RL training loops and verifiers you can trust.">
+<script>try{var t=localStorage.getItem("rle-theme");if(t&&t!=="system")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/site.js" defer></script>
+<style>
+.hero { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr); gap: 28px; align-items: end; padding: 18px 0 34px; border-bottom: 1px solid var(--line); }
+@media (max-width: 860px) { .hero { grid-template-columns: 1fr; } }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.summary { display: grid; gap: 14px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.stat { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+.stat b { display: block; font-family: var(--display); font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.stat span { color: var(--muted); font-size: 13px; }
+
+.section-head { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; margin: 40px 0 18px; }
+
+/* roadmap */
+.road { position: relative; display: grid; gap: 14px; padding-left: 46px; }
+.road::before { content: ""; position: absolute; left: 17px; top: 10px; bottom: 10px; width: 2px; background: var(--line); }
+.stop { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: center; }
+.stop .node { position: absolute; left: -46px; top: 22px; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-family: var(--display); font-weight: 800; background: var(--surface); border: 2px solid var(--line); color: var(--muted); }
+.stop.open .node { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 18%, transparent); }
+.stop.done .node { background: var(--good); border-color: var(--good); color: #fff; }
+.stop .card { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: center; }
+.stop.locked .card { box-shadow: none; background: var(--surface-2); }
+.meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; color: var(--muted); font-size: 14px; }
+.stop h3 { margin: 6px 0 4px; }
+.stop p { margin: 0; color: var(--muted); }
+.stop .right { display: grid; gap: 8px; justify-items: end; min-width: 150px; }
+.stop .right .bar { width: 150px; }
+.today-tag { font-size: 12px; font-weight: 700; color: var(--accent); }
+@media (max-width: 640px) { .stop .card { grid-template-columns: 1fr; } .stop .right { justify-items: start; } }
+
+/* flow */
+.flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; counter-reset: f; }
+@media (max-width: 860px) { .flow { grid-template-columns: repeat(2, 1fr); } }
+.flow .card { padding: 16px; box-shadow: none; }
+.flow .k { font-family: var(--mono); font-size: 13px; color: var(--accent); }
+.flow h3 { font-size: 18px; margin: 4px 0; }
+.flow p { margin: 0; font-size: 15px; color: var(--muted); }
+
+.checks label { display: flex; gap: 12px; align-items: flex-start; padding: 10px 0; border-bottom: 1px dashed var(--line); }
+.checks label:last-child { border-bottom: 0; }
+.checks input { width: 20px; height: 20px; margin-top: 3px; accent-color: var(--good); flex: none; }
+.week { display: flex; gap: 6px; align-items: flex-end; height: 120px; margin-top: 12px; }
+.week div { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 4px; font-size: 13px; color: var(--muted); }
+.week i { display: block; width: 100%; border-radius: 8px 8px 3px 3px; background: var(--c2); }
+.week i.we { background: var(--accent); }
+.week b { color: var(--ink); font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<header class="site-header">
+  <div class="site-bar">
+    <a class="brand" href="index.html"><span class="mark" aria-hidden="true"></span>RLE Lab</a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="index.html" aria-current="page">Roadmap</a>
+      <a href="days/day1/index.html">Day 1</a>
+    </nav>
+    <button class="theme-btn" data-theme-btn type="button">Theme</button>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div>
+      <span class="eyebrow">RL Engineer · Week 1</span>
+      <h1>Build the loop. <em>Trust the verifier.</em></h1>
+      <p class="lead">Seven days, about 20 hours, one project: train a small model with GRPO against a verifier you write, break that verifier on purpose, harden it, and publish the results.</p>
+      <div class="row" style="margin-top:20px">
+        <a class="btn" id="continueBtn" href="days/day1/index.html">Start Day 1</a>
+        <a class="btn ghost" href="#roadmap">See the roadmap</a>
+      </div>
+    </div>
+    <div class="summary card">
+      <div class="row" style="justify-content:space-between"><b>Your progress</b><span class="pill" id="todayPill">Day 1</span></div>
+      <div class="stats">
+        <div class="stat"><b id="sDays">0/7</b><span>days complete</span></div>
+        <div class="stat"><b id="sSteps">0</b><span>steps done</span></div>
+        <div class="stat"><b>20h</b><span>planned</span></div>
+      </div>
+      <div class="bar" aria-hidden="true"><i id="weekBar" style="width:0%"></i></div>
+      <p style="margin:0;color:var(--muted);font-size:14px">Saved in this browser only.</p>
+    </div>
+  </section>
+
+  <div class="section-head" id="roadmap">
+    <div><span class="eyebrow">The week</span><h2>Roadmap</h2></div>
+    <p style="margin:0;color:var(--muted)">2 hours on weekdays · 5 hours on Saturday and Sunday</p>
+  </div>
+  <div class="road" id="road"></div>
+
+  <div class="section-head">
+    <div><span class="eyebrow">Every day</span><h2>How a day works</h2></div>
+  </div>
+  <div class="flow">
+    <div class="card"><span class="k">01</span><h3>Lecture</h3><p>An animated 6–8 minute video on the day's ideas.</p></div>
+    <div class="card"><span class="k">02</span><h3>Notes</h3><p>Interactive notes to revise from, with one-liners for interviews.</p></div>
+    <div class="card"><span class="k">03</span><h3>Playground</h3><p>Change the numbers yourself and watch the maths respond.</p></div>
+    <div class="card"><span class="k">04</span><h3>Quiz</h3><p>Ten questions. Score 8 or more to pass.</p></div>
+    <div class="card"><span class="k">05</span><h3>Checkpoint</h3><p>Write the code yourself, pass the tests, send it for review.</p></div>
+  </div>
+
+  <div class="grid2" style="margin-top:40px">
+    <div class="card">
+      <span class="eyebrow">Time budget</span>
+      <h3 style="margin-top:6px">About 20 hours, around a 10-hour workday</h3>
+      <div class="week" id="week" aria-label="Hours per day"></div>
+      <p style="margin:10px 0 0;color:var(--muted);font-size:14px">Heavier GPU work lands on the weekend. Every day also has a 45-minute minimum version.</p>
+    </div>
+    <div class="card">
+      <span class="eyebrow">End of week</span>
+      <h3 style="margin-top:6px">Checklist</h3>
+      <div class="checks" id="checks"></div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-foot"><div class="in"><span>RLE Lab · a personal study track for RL engineering</span><span>Progress is stored in your browser.</span></div></footer>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const S = window.RLE.store;
+  const START = new Date("2026-11-12T00:00:00");
+  const DAYS = [
+    { d: 1, date: "Thu Nov 12", h: 2, t: "The RL loop and the GRPO advantage", out: "Repo set up, GRPO advantage coded by hand", href: "days/day1/index.html" },
+    { d: 2, date: "Fri Nov 13", h: 2, t: "Verifiers 101", out: "verifier.py with 20 passing tests" },
+    { d: 3, date: "Sat Nov 14", h: 5, t: "Baseline eval and first GRPO run", out: "Before/after accuracy and training logs" },
+    { d: 4, date: "Sun Nov 15", h: 5, t: "Break your own verifier", out: "Adversarial suite, verifier v2, measured precision" },
+    { d: 5, date: "Mon Nov 16", h: 2, t: "Retrain with v2; what GRPO gets wrong", out: "v2 run launched, notes on Dr. GRPO and DAPO" },
+    { d: 6, date: "Tue Nov 17", h: 2, t: "Compare runs; production RL infrastructure", out: "v1 vs v2 results table, architecture notes" },
+    { d: 7, date: "Wed Nov 18", h: 2, t: "Publish and plan week 2", out: "README write-up, public post, week 2 picks" }
+  ];
+  const STEPS = ["lecture", "notes", "playground", "quiz", "checkpoint"];
+  const dayDone = d => { const o = S.get(`d${d}-done`, {}); return STEPS.filter(s => o[s]).length; };
+  const idx = Math.floor((new Date() - START) / 864e5) + 1;
+  const todayDay = Math.min(7, Math.max(1, idx));
+  document.getElementById("todayPill").textContent = idx < 1 ? "Starts Nov 12" : idx > 7 ? "Week finished" : "Today: Day " + todayDay;
+
+  let complete = 0, steps = 0;
+  const road = document.getElementById("road");
+  road.innerHTML = DAYS.map(x => {
+    const n = dayDone(x.d); steps += n; const full = n === 5; if (full) complete++;
+    const open = !!x.href;
+    const cls = full ? "done" : open ? "open" : "locked";
+    const status = full ? '<span class="pill done">Complete</span>' : open ? `<span class="pill on">${n ? "In progress" : "Available"}</span>` : `<span class="pill">${x.d === 2 ? "Coming next" : "Coming soon"}</span>`;
+    const right = open
+      ? `<div class="right">${status}<div class="bar" aria-label="${n} of 5 steps"><i style="width:${n * 20}%"></i></div><a class="btn" href="${x.href}">${n ? "Continue" : "Open"} Day ${x.d}</a></div>`
+      : `<div class="right">${status}</div>`;
+    return `<article class="stop ${cls}"><span class="node" aria-hidden="true">${full ? "✓" : x.d}</span>
+      <div class="card"><div><div class="meta"><b style="color:var(--ink)">Day ${x.d}</b><span>· ${x.date}</span><span>· ${x.h}h</span>${x.d === todayDay && idx >= 1 && idx <= 7 ? '<span class="today-tag">· TODAY</span>' : ""}</div>
+      <h3>${x.t}</h3><p>You finish with: ${x.out}</p></div>${right}</div></article>`;
+  }).join("");
+  document.getElementById("sDays").textContent = `${complete}/7`;
+  document.getElementById("sSteps").textContent = steps;
+  document.getElementById("weekBar").style.width = (steps / 35 * 100) + "%";
+  const d1 = dayDone(1);
+  const cb = document.getElementById("continueBtn");
+  cb.textContent = d1 === 0 ? "Start Day 1" : d1 < 5 ? "Continue Day 1" : "Review Day 1";
+
+  document.getElementById("week").innerHTML = DAYS.map(x => `<div><b>${x.h}h</b><i class="${x.h > 2 ? "we" : ""}" style="height:${x.h / 5 * 80}px"></i><span>${x.date.slice(0, 3)}</span></div>`).join("");
+
+  const CHECK = ["Public repo: verifier with tests, adversarial suite, two training runs, eval outputs", "Results: baseline vs v1 vs v2, including hand-labelled accuracy", "Verifier audit report with measured precision", "Notes: the loop, GRPO variants, production architecture", "README plus one public post", "Week 2 plan chosen"];
+  const ck = S.get("week1-checks", {});
+  document.getElementById("checks").innerHTML = CHECK.map((c, i) => `<label><input type="checkbox" id="wk${i}" ${ck[i] ? "checked" : ""}><span>${c}</span></label>`).join("");
+  CHECK.forEach((_, i) => document.getElementById("wk" + i).addEventListener("change", e => { ck[i] = e.target.checked; S.set("week1-checks", ck); }));
+});
+</script>
+</body>
+</html>
