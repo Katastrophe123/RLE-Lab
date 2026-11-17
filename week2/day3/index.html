@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Week 2 · Day 3 · Train with a Judge · RLE Lab</title>
+<meta name="author" content="Kanishk Singh Parihar">
+<script>(function(){var t=null;try{t=localStorage.getItem("rle-theme")}catch(e){}if(!t){try{t=JSON.parse(window.name||"{}")["rle-theme"]}catch(e){}}if(t&&t!=="system")document.documentElement.setAttribute("data-mode",t)})()</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="stylesheet" href="../../assets/day.css">
+<script src="../../assets/site.js" defer></script>
+<style>
+.pgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; }
+.ctl { display: grid; grid-template-columns: 120px 1fr 64px; gap: 10px; align-items: center; margin: 8px 0; }
+.ctl output { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+.arena-in { width: 100%; font-family: var(--mono); font-size: 15px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.flag { margin-top: 10px; padding: 10px 12px; border-radius: 12px; font-weight: 500; border-left: 5px solid var(--c); background: var(--surface-2); }
+.advgrid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 14px; }
+.acol h4 { margin: 0 0 6px; font-size: 14px; color: var(--muted); }
+.arow { display: grid; grid-template-columns: 44px 1fr 74px; gap: 8px; align-items: center; margin: 4px 0; font-family: var(--mono); font-size: 14px; }
+.arow b { text-align: right; font-variant-numeric: tabular-nums; }
+.atrack { position: relative; height: 16px; border-radius: 8px; background: var(--bg-2); }
+.atrack::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; background: var(--line); }
+.atrack i { position: absolute; top: 0; height: 100%; border-radius: 8px; }
+.ok1 { color: var(--good); font-weight: 700; } .bad1 { color: var(--bad); font-weight: 700; }
+.note-ill { color: var(--muted); font-size: 13px; }
+textarea.arena-in { resize: vertical; line-height: 1.5; }
+.formgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.formgrid label { display: grid; gap: 4px; font-size: 14px; font-weight: 600; color: var(--muted); }
+.formgrid input { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; font-family: var(--mono); padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.lt th, .lt td { padding: 8px 6px; font-size: 14px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<canvas id="confetti" aria-hidden="true"></canvas>
+<header class="site-header">
+  <div class="site-bar">
+    <a class="brand" href="../../index.html"><span class="mark" aria-hidden="true"></span>RLE Lab</a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="../../index.html">Roadmap</a>
+      <a href="../../index.html#roadmap">Week 1</a>
+      <a href="../day1/index.html">W2 Day 1</a>
+      <a href="../day2/index.html">W2 Day 2</a>
+      <a href="index.html" aria-current="page">W2 Day 3</a>
+      <a href="../day4/index.html">W2 Day 4</a>
+      <a href="../day5/index.html">W2 Day 5</a>
+    </nav>
+    <button class="theme-btn" data-theme-btn type="button">Theme</button>
+  </div>
+  <div class="daybar">
+    <nav class="tabs" aria-label="Week 2 Day 3 sections">
+      <a class="tab" href="#lecture" data-v="lecture" style="--c: var(--c1)"><span class="dot"></span>1 · Lecture<span class="tick">✓</span></a>
+      <a class="tab" href="#notes" data-v="notes" style="--c: var(--c2)"><span class="dot"></span>2 · Notes<span class="tick">✓</span></a>
+      <a class="tab" href="#playground" data-v="playground" style="--c: var(--c3)"><span class="dot"></span>3 · Playground<span class="tick">✓</span></a>
+      <a class="tab" href="#quiz" data-v="quiz" style="--c: var(--c4)"><span class="dot"></span>4 · Quiz<span class="tick">✓</span></a>
+      <a class="tab" href="#checkpoint" data-v="checkpoint" style="--c: var(--good)"><span class="dot"></span>5 · Checkpoint<span class="tick">✓</span></a>
+    </nav>
+    <div class="prog"><span id="progTxt">0 of 5 done</span><div class="ring" id="ring"><span id="ringPct">0%</span></div></div>
+  </div>
+</header>
+
+<main>
+<section class="view" id="v-lecture">
+  <span class="eyebrow">Week 2 · Day 3 · 6 min lecture · 5 hours today</span>
+  <h2>Train with a judge as the reward</h2>
+  <p class="lead">Your measured judge becomes a GRPO reward. Build the reward plumbing, run it on two Kaggle GPUs, and learn to spot overoptimization with a held-out judge.</p>
+  <div class="lecture">
+    <div>
+      <video id="vid" controls preload="metadata" src="w2d3_part1.mp4#t=0.6"></video>
+      <p style="color:var(--muted);font-size:14px;margin:8px 0 0">Part <span id="partNo">1</span> of 2 · part 2 starts automatically.</p>
+    </div>
+    <div class="card"><h3 style="margin-bottom:10px">Chapters</h3><div class="chapters" id="chapters"></div></div>
+  </div>
+</section>
+
+<section class="view" id="v-notes">
+  <span class="eyebrow">Week 2 · Day 3 · Notes</span>
+  <h2>A judge-shaped reward</h2>
+  <p class="lead">Same GRPO loop as week 1. The only new part is the reward function, and the new risk that comes with it: the model gets better at pleasing the judge rather than at the task.</p>
+
+  <div class="card note" style="--c: var(--c1)">
+    <div class="head"><div class="num">1</div><h3>The task and the rubric</h3></div>
+    <p>The model reads a news article (truncate to ~400 words to keep prompts short) and writes a summary of at most 50 words. A news-summary dataset with human-written highlights works well, for example CNN/DailyMail (fields <code>article</code> and <code>highlights</code>); the highlights are the reference.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Rubric item</th><th>Checked by</th></tr></thead>
+      <tbody>
+        <tr><td>Covers the key points of the reference</td><td>Judge (reference-guided)</td></tr>
+        <tr><td>No invented facts</td><td>Judge</td></tr>
+        <tr><td>Plain language</td><td>Judge</td></tr>
+        <tr><td>At most 50 words</td><td><b>Code</b>: exact and free</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="card note" style="--c: var(--c3)">
+    <div class="head"><div class="num">2</div><h3>Setup: policy on GPU 0, judge on GPU 1</h3></div>
+    <p>On Kaggle, choose <b>GPU T4 ×2</b>. Start the judge first, in the background, pinned to the second GPU. T4s don't support bfloat16, so use half precision:</p>
+<pre class="code"><span class="cm"># cell 1: start the judge server on GPU 1 (runs in the background)</span>
+!CUDA_VISIBLE_DEVICES=1 nohup vllm serve Qwen/Qwen2.5-3B-Instruct --dtype half \
+    --port 8000 --max-model-len 4096 --gpu-memory-utilization 0.85 &gt; judge.log 2&gt;&amp;1 &amp;
+
+<span class="cm"># cell 2: BEFORE importing torch/transformers, keep the policy on GPU 0</span>
+import os; os.environ["CUDA_VISIBLE_DEVICES"] = "0"</pre>
+    <p>Call it like any OpenAI-style endpoint:</p>
+<pre class="code">from openai import OpenAI
+client = OpenAI(base_url="http://localhost:8000/v1", api_key="EMPTY")
+
+def judge_fn(prompt, completion):
+    try:
+        r = client.chat.completions.create(
+            model="Qwen/Qwen2.5-3B-Instruct", temperature=0, max_tokens=300, timeout=60,
+            messages=[{"role": "user", "content": build_judge_prompt(prompt, completion, RUBRIC)}])
+        return parse_score(r.choices[0].message.content)   <span class="cm"># Day 1 code</span>
+    except Exception:
+        return None                                        <span class="cm"># counted as a failure</span></pre>
+    <p class="note-ill">Commands and flags change between vLLM and TRL versions; check the docs for the versions you install. Any judge you can reach through an API works the same way.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--c4)">
+    <div class="head"><div class="num">3</div><h3>The reward function</h3></div>
+    <ul>
+      <li><b>Scale</b> the 1–10 score to 0–1: <code>(score − 1) / 9</code>.</li>
+      <li><b>Hybrid:</b> <code>0.8 × judge + 0.2 × length_ok</code>. Code checks what code can.</li>
+      <li><b>Failures</b> (timeouts, no score) get the batch's mean judge score, so they barely move the policy. Count them; above a few percent, fix the judge prompt before training.</li>
+      <li><b>Cache</b> by (prompt, completion). Duplicate answers are common in a group.</li>
+      <li><b>Parallelize:</b> send a batch's judge calls with a thread pool (e.g. 16–32 workers) instead of one by one.</li>
+    </ul>
+<pre class="code">reward_fn, stats = make_judge_reward(judge_fn, max_words=50, w_judge=0.8, w_len=0.2)
+trainer = GRPOTrainer(model=model, reward_funcs=[reward_fn], args=config, train_dataset=ds, ...)</pre>
+  </div>
+
+  <div class="card note" style="--c: var(--bad)">
+    <div class="head"><div class="num">4</div><h3>Overoptimization: the proxy and the gold</h3></div>
+    <p>The training judge is a <b>proxy</b> for what you want. Gao, Schulman and Hilton (2022) measured this with reward models: as optimization against a proxy continues, the true ("gold") score rises, peaks and then falls. Goodhart's law, measured.</p>
+    <ul>
+      <li><b>Evaluate with a held-out judge</b> you never train on: a different, stronger model family, or your own labels on a small set.</li>
+      <li><b>Training score up, held-out score down</b> → you're overoptimizing.</li>
+      <li><b>Save a checkpoint every 50 steps</b> and pick by held-out score, not training reward. A KL penalty or stopping earlier slows the drift.</li>
+      <li><b>Baseline first:</b> score the base model with the held-out judge, then compare checkpoints question by question (week 1, Day 6).</li>
+    </ul>
+  </div>
+
+  <div class="card note" style="--c: var(--c2)">
+    <div class="head"><div class="num">5</div><h3>What to watch while it trains</h3></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Curve</th><th>Healthy</th><th>Warning sign</th></tr></thead>
+      <tbody>
+        <tr><td>Judge reward</td><td>Rises, then flattens</td><td>Jumps suddenly: look for a new trick</td></tr>
+        <tr><td>Answer length</td><td>Stays near the limit</td><td>Climbs past it or collapses to a few words</td></tr>
+        <tr><td>Judge failure rate</td><td>Under a few %</td><td>Rising: answers may be confusing the judge</td></tr>
+        <tr><td>Samples every 50 steps</td><td>Read like good summaries</td><td>Odd phrasing that keeps repeating</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="card note" style="--c: var(--good)">
+    <div class="head"><div class="num">6</div><h3>Deliverable: results/judge_run.md</h3></div>
+<pre class="code" id="tpl"># GRPO with a judge reward
+
+Policy: Qwen2.5-0.5B-Instruct + LoRA · steps: __ · G = __
+Training judge: ______ (rubric v__)   Held-out judge: ______
+Reward: 0.8 × judge + 0.2 × length_ok · judge failure rate: __%
+
+| Checkpoint | Training judge (0–1) | Held-out judge (0–1) | Avg words |
+|---|---|---|---|
+| base | | | |
+| step 50 | | | |
+| step 100 | | | |
+| step 150 | | | |
+
+Chosen checkpoint: ___ (why)
+Signs of overoptimization: ...
+Three sample summaries (base vs chosen): ...</pre>
+    <div class="row" style="margin-top:8px"><button class="btn ghost" data-copy="tpl">Copy template</button></div>
+  </div>
+
+  <div class="card note" style="--c: var(--c5)">
+    <div class="head"><div class="num">7</div><h3>Flip cards</h3></div>
+    <div class="flips" id="flips"></div>
+  </div>
+  <div class="card note" style="--c: var(--c3)">
+    <div class="head"><div class="num">8</div><h3>Glossary</h3></div>
+    <input class="gloss-in" id="glossQ" type="search" placeholder="Filter terms…" aria-label="Filter glossary">
+    <dl class="gloss" id="gloss"><div><dt>Proxy reward</dt><dd>The score you train on; it stands in for what you really want.</dd></div><div><dt>Gold reward</dt><dd>What you really want, measured as carefully as you can.</dd></div><div><dt>Overoptimization</dt><dd>Pushing the proxy so hard that the gold reward gets worse.</dd></div><div><dt>Goodhart&#x27;s law</dt><dd>When a measure becomes a target, it stops being a good measure.</dd></div><div><dt>Hybrid reward</dt><dd>A weighted mix of code checks and a judge score.</dd></div><div><dt>Held-out judge</dt><dd>A different judge you never train on, used only to evaluate.</dd></div><div><dt>vLLM server</dt><dd>Runs a model behind an OpenAI-style web API for fast generation.</dd></div><div><dt>dtype half</dt><dd>16-bit floats; what T4 GPUs support.</dd></div><div><dt>Cache</dt><dd>Remembering judge results so duplicates aren&#x27;t graded twice.</dd></div><div><dt>Thread pool</dt><dd>A set of workers that send many judge calls at once.</dd></div><div><dt>Checkpoint</dt><dd>A saved copy of the model during training.</dd></div></dl>
+    <script>document.getElementById("glossQ").addEventListener("input",function(e){var q=e.target.value.toLowerCase();document.querySelectorAll("#gloss>div").forEach(function(d){d.hidden=q&&d.textContent.toLowerCase().indexOf(q)<0})})</script>
+  </div>
+</section>
+
+<section class="view" id="v-playground">
+  <span class="eyebrow">Week 2 · Day 3 · Playground</span>
+  <h2>Shape the reward</h2>
+  <p class="lead">Mix judge and code checks, see what failure handling does to GRPO advantages, and find the best checkpoint before the proxy takes over.</p>
+  <div class="pgrid">
+    <div class="card">
+      <h3>Hybrid reward mixer</h3>
+      <div class="ctl"><label for="hJ">judge score</label><input id="hJ" type="range" min="1" max="10" step="0.5" value="8"><output id="hJo">8</output></div>
+      <div class="ctl"><label for="hW">word count</label><input id="hW" type="range" min="5" max="120" value="62"><output id="hWo">62</output></div>
+      <div class="ctl"><label for="hA">judge weight</label><input id="hA" type="range" min="0" max="1" step="0.05" value="0.8"><output id="hAo">0.80</output></div>
+      <div class="stats" style="margin-top:10px"><div class="stat">judge part<b id="hJp">–</b></div><div class="stat">length part<b id="hLp">–</b></div><div class="stat">reward<b id="hR">–</b></div></div>
+    </div>
+    <div class="card">
+      <h3>A failed judge call in a group</h3>
+      <p style="margin:0 0 6px;color:var(--muted)">Four answers to one prompt; answer 3's judge call timed out.</p>
+      <div class="row" style="flex-wrap:wrap" id="fMode"><button class="btn" data-f="mean">fill with mean</button><button class="btn ghost" data-f="zero">fill with 0</button></div>
+      <div class="tablewrap"><table class="lt"><thead><tr><th>answer</th><th>judge (0–1)</th><th>reward</th><th>adv.</th></tr></thead><tbody id="fRows"></tbody></table></div>
+      <p class="note-ill" style="margin:0">Advantage = (r − mean) / (std + 1e-6), as in week 1.</p>
+    </div>
+    <div class="card">
+      <h3>Proxy vs gold</h3>
+      <canvas id="ovCv" width="640" height="320" style="width:100%;height:auto;border-radius:12px;background:var(--bg-2)"></canvas>
+      <div class="ctl"><label for="ovS">training step</label><input id="ovS" type="range" min="0" max="400" step="50" value="250"><output id="ovSo">250</output></div>
+      <div class="flag" id="ovFlag" style="--c: var(--c1)"></div>
+      <p class="note-ill" style="margin:0">Illustrative curves with the shape Gao et al. describe.</p>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="v-quiz">
+  <span class="eyebrow">Week 2 · Day 3 · Quiz</span>
+  <h2>10 questions. Score 8+ to pass.</h2>
+  <p class="lead">Multiple choice plus three you compute yourself.</p>
+  <div class="qwrap card" id="quiz"></div>
+</section>
+
+<section class="view" id="v-checkpoint">
+  <span class="eyebrow">Week 2 · Day 3 · Checkpoint</span>
+  <h2>Wire up the judge reward, then run it</h2>
+  <p class="lead">Test the plumbing with a fake judge first, then launch on Kaggle. Send me your results table.</p>
+  <div class="grid2">
+    <div class="card">
+      <h3>Tasks</h3>
+      <ol>
+        <li>Write <code>judge/judge_reward.py</code> with:
+          <ul>
+            <li><code>scale_score(score, lo=1, hi=10)</code>: map to [0, 1], clamped; <code>None</code> stays <code>None</code>; <code>ValueError</code> if hi ≤ lo</li>
+            <li><code>word_count(text)</code> and <code>length_ok(text, max_words=50)</code>: 1.0 if 1 to max_words words, else 0.0</li>
+            <li><code>make_judge_reward(judge_fn, max_words=50, w_judge=0.8, w_len=0.2, lo=1, hi=10)</code>: returns <code>(reward_fn, stats)</code>. Hybrid reward; failures get the mean scaled score of the batch's successes (0.5 if all fail); cache by (prompt, completion); <code>stats</code> counts <code>calls</code>, <code>cache_hits</code>, <code>failures</code>; <code>ValueError</code> if weights don't sum to 1 or lengths differ</li>
+          </ul>
+        </li>
+        <li>Pass the 19 tests on the right (they use a fake judge, no GPU needed).</li>
+        <li>Launch GRPO on Kaggle (2× T4), saving a checkpoint every 50 steps.</li>
+        <li>Score base + 3 checkpoints with a held-out judge; fill in <code>results/judge_run.md</code>.</li>
+      </ol>
+      <h3 style="margin-top:14px">Your checklist</h3>
+      <div class="checks">
+        <label><input type="checkbox" id="c1"> 19 tests pass</label>
+        <label><input type="checkbox" id="c2"> Training run finished, checkpoints saved</label>
+        <label><input type="checkbox" id="c3"> Held-out evaluation and results table done</label>
+        <label><input type="checkbox" id="c4"> Results sent to Claude</label>
+      </div>
+    </div>
+    <div>
+      <p style="margin-top:0"><b>Tests</b>: save as <code>judge/test_judge_reward.py</code>, run <code>pytest</code>.</p>
+      <div class="codebox"><button class="btn" data-copy="tests">Copy</button><pre class="code" id="tests" style="max-height:640px"></pre></div>
+      <p class="note-ill">Checked against a reference solution: all 19 pass. Versions that skip clamping, fill failures with 0, cache by completion only, accept empty answers, skip the cache, or accept bad weights each fail at least one.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="site-foot"><div class="in"><span>RLE Lab · Kanishk Singh Parihar · Week 2 · Day 3 of 7</span><a href="../../index.html">Back to the roadmap</a></div></footer>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const store = { get: (k, d) => window.RLE.store.get("w2d3-" + k, d), set: (k, v) => window.RLE.store.set("w2d3-" + k, v) };
+const CSS = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+const VIEWS = ["lecture", "notes", "playground", "quiz", "checkpoint"];
+let done = store.get("done", {});
+function mark(v) { if (!done[v]) { done[v] = true; store.set("done", done); paintProg(); } }
+function paintProg() { const n = VIEWS.filter(v => done[v]).length; $("#progTxt").textContent = `${n} of 5 done`; $("#ring").style.setProperty("--p", n * 20); $("#ringPct").textContent = n * 20 + "%"; $$(".tab").forEach(t => t.classList.toggle("done", !!done[t.dataset.v])); }
+function route() {
+  const h = location.hash.slice(1), v = VIEWS.includes(h) ? h : "lecture";
+  $$(".view").forEach(s => s.classList.toggle("on", s.id === "v-" + v));
+  $$(".tab").forEach(t => { if (t.dataset.v === v) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current"); });
+  if (v === "notes") setTimeout(() => mark("notes"), 20000);
+  window.scrollTo({ top: 0 });
+}
+addEventListener("hashchange", route);
+
+const CH = [["Intro", 0.0], ["Words you need", 20.5], ["The task", 45.0], ["Setup: 2\u00d7 T4", 64.8], ["The reward function", 92.1], ["Hybrid rewards", 112.9], ["When a call fails", 132.1], ["Speed", 162.0], ["What to watch", 183.7], ["Goodhart's law", 201.7], ["Two curves", 227.9], ["Held-out judge", 246.8], ["Picking checkpoints", 265.3], ["The starting point", 289.0], ["Recap", 304.3], ["Your checkpoint", 324.6]];
+const PARTS = [["w2d3_part1.mp4", 0], ["w2d3_part2.mp4", 183.7]], TOTAL = 348.0;
+const vid = $("#vid"); let part = 0;
+const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+function loadPart(i, at = 0, play = false) { if (part !== i) { part = i; vid.src = PARTS[i][0]; $("#partNo").textContent = i + 1; } const go = () => { vid.currentTime = at; if (play) vid.play().catch(() => {}); }; if (vid.readyState >= 1) go(); else vid.addEventListener("loadedmetadata", go, { once: true }); }
+function seekGlobal(t) { const i = t >= PARTS[1][1] ? 1 : 0; loadPart(i, t - PARTS[i][1], true); }
+$("#chapters").innerHTML = CH.map(([n, t]) => `<button class="chap" data-t="${t}"><time>${fmt(t)}</time><span>${n}</span></button>`).join("");
+$$(".chap").forEach(b => b.addEventListener("click", () => seekGlobal(+b.dataset.t)));
+vid.addEventListener("ended", () => { if (part === 0) loadPart(1, 0, true); else mark("lecture"); });
+vid.addEventListener("timeupdate", () => { const t = PARTS[part][1] + vid.currentTime; let cur = 0; CH.forEach(([, s], i) => { if (t >= s) cur = i; }); $$(".chap").forEach((b, i) => b.classList.toggle("now", i === cur)); if (t / TOTAL > 0.9) mark("lecture"); });
+
+/* ---- math ---- */
+const proxyF = u => 0.1 + 0.85 * (1 - Math.exp(-2.6 * u)), goldF = u => 0.1 + 3.0 * u * Math.exp(-2.5 * u);
+
+/* flip cards */
+const FL = [["Proxy reward", "concept", "The score you train on. It stands in for what you really want.", "--c1"],
+  ["Gold reward", "concept", "What you really want, measured carefully: held-out judge or your labels.", "--good"],
+  ["Overoptimization", "risk", "Proxy keeps rising; true quality peaks, then falls (Gao et al.).", "--bad"],
+  ["Hybrid reward", "design", "0.8 × judge + 0.2 × length check. Code checks what code can.", "--c4"],
+  ["Failed call", "plumbing", "Give it the batch mean, not 0, and count failures.", "--c2"],
+  ["Two GPUs", "setup", "Policy on GPU 0, vLLM judge on GPU 1, dtype half on T4.", "--c3"],
+  ["Pick checkpoints", "process", "By held-out score, not training reward.", "--c5"],
+  ["Read samples", "habit", "Reward up but answers strange? Believe the answers.", "--c1"]];
+$("#flips").innerHTML = FL.map(([f, k, b, c]) => `<button class="flip" style="--c: var(${c})" aria-label="${esc(f)}: flip to reveal"><div class="in"><div class="f">${esc(f)}<small>${k} · tap to flip</small></div><div class="bk">${esc(b)}</div></div></button>`).join("");
+$$(".flip").forEach(b => b.onclick = () => b.classList.toggle("on"));
+
+/* hybrid mixer */
+function hLab() {
+  const j = +$("#hJ").value, w = +$("#hW").value, a = +$("#hA").value;
+  $("#hJo").textContent = j; $("#hWo").textContent = w; $("#hAo").textContent = a.toFixed(2);
+  const js = (j - 1) / 9, lk = w >= 1 && w <= 50 ? 1 : 0;
+  $("#hJp").textContent = (a * js).toFixed(2); $("#hLp").textContent = ((1 - a) * lk).toFixed(2); $("#hR").textContent = (a * js + (1 - a) * lk).toFixed(2);
+}
+["#hJ", "#hW", "#hA"].forEach(s => $(s).addEventListener("input", () => { hLab(); mark("playground"); })); hLab();
+
+/* failure handling */
+let fmode = "mean";
+function fLab() {
+  const J = [0.78, 0.33, null, 0.89]; const ok = J.filter(v => v !== null), m = ok.reduce((a, b) => a + b, 0) / ok.length;
+  const r = J.map(v => v === null ? (fmode === "mean" ? m : 0) : v);
+  const mu = r.reduce((a, b) => a + b, 0) / r.length, sd = Math.sqrt(r.reduce((a, b) => a + (b - mu) ** 2, 0) / r.length);
+  $("#fRows").innerHTML = J.map((v, i) => { let adv = (r[i] - mu) / (sd + 1e-6); if (Math.abs(adv) < 0.005) adv = 0; return `<tr><td>${i + 1}</td><td>${v === null ? '<span class="bad1">timeout</span>' : v.toFixed(2)}</td><td>${r[i].toFixed(2)}</td><td class="${v === null && adv < -0.5 ? "bad1" : ""}">${adv >= 0 ? "+" : ""}${adv.toFixed(2)}</td></tr>`; }).join("");
+}
+$$("#fMode [data-f]").forEach(b => b.onclick = () => { fmode = b.dataset.f; $$("#fMode [data-f]").forEach(x => x.classList.toggle("ghost", x !== b)); fLab(); mark("playground"); }); fLab();
+
+/* proxy vs gold */
+const oc = $("#ovCv"), og = oc.getContext("2d");
+function ovLab() {
+  const st = +$("#ovS").value; $("#ovSo").textContent = st;
+  const W = oc.width, H = oc.height, X = u => 40 + (W - 60) * u, Y = v => H - 30 - (H - 60) * v;
+  og.clearRect(0, 0, W, H);
+  og.strokeStyle = CSS("--line"); og.lineWidth = 1.5; og.beginPath(); og.moveTo(40, H - 30); og.lineTo(W - 20, H - 30); og.stroke();
+  [[proxyF, CSS("--c2"), "training judge"], [goldF, CSS("--good"), "held-out"]].forEach(([f, col, lab]) => { og.strokeStyle = col; og.lineWidth = 4; og.beginPath(); for (let i = 0; i <= 80; i++) { const u = i / 80; i ? og.lineTo(X(u), Y(f(u))) : og.moveTo(X(u), Y(f(u))); } og.stroke(); og.fillStyle = col; og.font = "22px IBM Plex Sans, sans-serif"; og.textAlign = "right"; og.fillText(lab, W - 24, Y(f(1)) - 8); });
+  const u = st / 400; og.strokeStyle = CSS("--ink"); og.lineWidth = 2; og.setLineDash([5, 5]); og.beginPath(); og.moveTo(X(u), 10); og.lineTo(X(u), H - 30); og.stroke(); og.setLineDash([]);
+  const best = 0.4, f = $("#ovFlag");
+  const p = proxyF(u), g = goldF(u);
+  f.style.setProperty("--c", u > best + 0.05 ? "var(--bad)" : "var(--good)");
+  f.innerHTML = `Step ${st}: training judge <b>${p.toFixed(2)}</b>, held-out <b>${g.toFixed(2)}</b>. ${u > best + 0.05 ? "Past the peak: the model is learning to please the training judge." : u < best - 0.05 ? "Both still rising." : "Near the best checkpoint (step 160)."}`;
+}
+$("#ovS").addEventListener("input", () => { ovLab(); mark("playground"); }); document.addEventListener("themechange", ovLab); ovLab();
+
+/* quiz */
+const Q = [
+  { q: "Why check word count in code instead of asking the judge?", o: ["Judges can't read", "Code is exact, free and hard to fool; judges are bad at counting", "TRL requires it", "It makes the judge faster"], a: 1, e: "Let code check what code can." },
+  { num: true, q: "Judge score 8 on a 1–10 scale. Scaled to 0–1? (2 decimals)", ans: 0.7778, tol: 0.006, e: "(8 − 1) / 9 = 0.78.", fmt: 2 },
+  { num: true, q: "Hybrid reward 0.8 × judge + 0.2 × length_ok. Scaled judge 0.75, but the summary has 62 words (limit 50). Reward? (2 decimals)", ans: 0.6, tol: 0.005, e: "0.8 × 0.75 + 0.2 × 0 = 0.60.", fmt: 2 },
+  { q: "A judge call times out. The best default reward for that answer is…", o: ["0", "1", "The batch's mean judge score, so it barely moves the policy", "Retry until it works, forever"], a: 2, e: "Zero would push a possibly fine answer down for no reason." },
+  { num: true, q: "64 prompts × 8 answers, but 96 answers are exact duplicates already in the cache. How many real judge calls?", ans: 416, tol: 0.5, e: "512 − 96 = 416.", fmt: 0 },
+  { q: "On a T4 GPU, which dtype should vLLM use?", o: ["bfloat16", "half (float16)", "float64", "int2"], a: 1, e: "T4s don't support bfloat16." },
+  { q: "What did Gao, Schulman and Hilton measure?", o: ["That bigger models always win", "That optimizing against a proxy reward eventually hurts the gold score", "That judges are unbiased", "That KL is unnecessary"], a: 1, e: "The gold score rises, peaks, then falls." },
+  { q: "Training judge says better, held-out judge says worse. This means…", o: ["The held-out judge is broken", "You're likely overoptimizing the training judge", "Train longer", "Lower the learning rate only"], a: 1, e: "Pick the checkpoint near the held-out peak." },
+  { q: "Which checkpoint should you ship?", o: ["Highest training reward", "Highest held-out score", "The last one", "The first one"], a: 1, e: "Training reward is the proxy." },
+  { q: "The reward jumps suddenly at step 180. First thing to do?", o: ["Celebrate", "Read sample answers from around step 180", "Double the learning rate", "Remove the length check"], a: 1, e: "Sudden jumps often mean the policy found a trick." }
+];
+let qi = 0, score = 0, answered = false, best = store.get("best", 0);
+function renderQ() {
+  const box = $("#quiz");
+  if (qi >= Q.length) {
+    const pass = score >= 8; best = Math.max(best, score); store.set("best", best); if (pass) { mark("quiz"); burst(); }
+    box.innerHTML = `<div class="score"><div class="big">${score}/${Q.length}</div><h3>${pass ? "Passed. Nice work." : "Not yet: 8 to pass."}</h3><p style="color:var(--muted)">Best so far: ${best}/${Q.length}.</p><div class="row" style="justify-content:center"><button class="btn ghost" id="retry">Retry quiz</button>${pass ? '<a class="btn good" href="#checkpoint">Go to checkpoint</a>' : ""}</div></div>`;
+    $("#retry").onclick = () => { qi = 0; score = 0; renderQ(); }; return;
+  }
+  const it = Q[qi]; answered = false;
+  if (!it.num) it.ord = it.o.map((_, i) => i).sort(() => Math.random() - .5);
+  box.innerHTML = `<div class="qhead"><span class="pill">Question ${qi + 1} of ${Q.length}</span><div class="qbar"><i style="width:${qi / Q.length * 100}%"></i></div><b style="font-variant-numeric:tabular-nums">${score} pts</b></div>
+    <h3 style="font-size:23px">${esc(it.q)}</h3>
+    ${it.num ? `<form class="numin" id="numf"><label for="numv" class="sr">Your answer</label><input id="numv" inputmode="decimal" placeholder="e.g. 0.50" autocomplete="off"><button class="btn">Check</button></form>` : `<div class="opts">${it.ord.map((oi, k) => `<button class="opt" data-i="${oi}">${String.fromCharCode(65 + k)}. ${esc(it.o[oi])}</button>`).join("")}</div>`}
+    <div id="fbox"></div>`;
+  if (it.num) { $("#numv").focus(); $("#numf").onsubmit = e => { e.preventDefault(); if (answered) return; const v = parseFloat($("#numv").value.replace(",", ".")); if (isNaN(v)) { $("#fbox").innerHTML = `<div class="fb" style="--c:var(--c4)">Type a number, like 0.50.</div>`; return; } finish(Math.abs(v - it.ans) <= it.tol); }; }
+  else $$(".opt").forEach(b => b.onclick = () => { if (answered) return; const i = +b.dataset.i; $$(".opt").forEach(x => { x.disabled = true; if (+x.dataset.i === it.a) x.classList.add("right"); }); if (i !== it.a) b.classList.add("wrong"); finish(i === it.a); });
+}
+function finish(ok) {
+  answered = true; const it = Q[qi]; if (ok) score++;
+  $("#fbox").innerHTML = `<div class="fb" style="--c:var(${ok ? "--good" : "--bad"})"><b>${ok ? "Correct." : "Not quite."}</b> ${it.num ? `Answer: ${it.ans.toFixed(it.fmt ?? 2)}. ` : ""}${esc(it.e)}</div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" id="next">${qi + 1 < Q.length ? "Next question" : "See score"}</button></div>`;
+  if (ok && !reduce) burst(40); $("#next").focus(); $("#next").onclick = () => { qi++; renderQ(); };
+}
+renderQ();
+
+const cc = $("#confetti"), cx2 = cc.getContext("2d"); let bits = [];
+function burst(n = 160) { if (reduce) return; cc.width = innerWidth; cc.height = innerHeight; const cols = ["--c1", "--c2", "--c3", "--c4", "--good"].map(CSS); const start = !bits.length; for (let i = 0; i < n; i++) bits.push({ x: innerWidth / 2, y: innerHeight / 3, vx: (Math.random() - .5) * 16, vy: Math.random() * -14 - 4, c: cols[i % 5], life: 120 }); if (start) loopConf(); }
+function loopConf() { cx2.clearRect(0, 0, cc.width, cc.height); bits.forEach(b => { b.x += b.vx; b.y += b.vy; b.vy += .45; b.life--; cx2.fillStyle = b.c; cx2.fillRect(b.x, b.y, 8, 5); }); bits = bits.filter(b => b.life > 0); if (bits.length) requestAnimationFrame(loopConf); else cx2.clearRect(0, 0, cc.width, cc.height); }
+
+const TESTS = "import pytest\nfrom judge_reward import scale_score, word_count, length_ok, make_judge_reward\n\ndef test_scale_mid():          assert abs(scale_score(5.5) - 0.5) < 1e-12\ndef test_scale_ends():         assert scale_score(1) == 0.0 and scale_score(10) == 1.0\ndef test_scale_clamps():       assert scale_score(12) == 1.0 and scale_score(0) == 0.0\ndef test_scale_none():         assert scale_score(None) is None\ndef test_scale_custom():       assert scale_score(3, lo=0, hi=4) == 0.75\ndef test_scale_bad_range():\n    with pytest.raises(ValueError): scale_score(3, lo=5, hi=5)\n\ndef test_word_count():         assert word_count(\"  Priya needs\\nthe report \") == 4\ndef test_length_ok():          assert length_ok(\"a \" * 50) == 1.0 and length_ok(\"a \" * 51) == 0.0\ndef test_length_empty():       assert length_ok(\"\") == 0.0 and length_ok(None) == 0.0\n\ndef fake(scores):\n    def j(p, c): return scores[c]\n    return j\n\ndef test_reward_hybrid():\n    fn, _ = make_judge_reward(fake({\"good\": 10, \"bad\": 1}))\n    assert fn([\"p\", \"p\"], [\"good\", \"bad\"]) == pytest.approx([1.0, 0.2])\ndef test_reward_long_answer_loses_length_part():\n    long = \"word \" * 60\n    fn, _ = make_judge_reward(fake({long: 10}))\n    assert fn([\"p\"], [long]) == pytest.approx([0.8])\ndef test_reward_failure_gets_mean():\n    fn, st = make_judge_reward(fake({\"a\": 10, \"b\": 1, \"c\": None}))\n    r = fn([\"p\"] * 3, [\"a\", \"b\", \"c\"])\n    assert r[2] == pytest.approx(0.8 * 0.5 + 0.2) and st[\"failures\"] == 1\ndef test_reward_all_fail():\n    fn, _ = make_judge_reward(fake({\"x\": None}))\n    assert fn([\"p\"], [\"x\"]) == pytest.approx([0.8 * 0.5 + 0.2])\ndef test_reward_cache():\n    calls = []\n    def j(p, c): calls.append(c); return 7\n    fn, st = make_judge_reward(j)\n    fn([\"p\", \"p\"], [\"same\", \"same\"]); fn([\"p\"], [\"same\"])\n    assert len(calls) == 1 and st[\"calls\"] == 1 and st[\"cache_hits\"] == 2\ndef test_cache_key_includes_prompt():\n    calls = []\n    def j(p, c): calls.append(p); return 7\n    fn, _ = make_judge_reward(j)\n    fn([\"p1\", \"p2\"], [\"same\", \"same\"]); assert calls == [\"p1\", \"p2\"]\ndef test_cached_failure_counted_again():\n    fn, st = make_judge_reward(fake({\"c\": None, \"a\": 10}))\n    fn([\"p\", \"p\"], [\"a\", \"c\"]); fn([\"p\"], [\"c\"])\n    assert st[\"failures\"] == 2 and st[\"calls\"] == 2\ndef test_weights_must_sum():\n    with pytest.raises(ValueError): make_judge_reward(fake({}), w_judge=0.9, w_len=0.2)\ndef test_length_mismatch():\n    fn, _ = make_judge_reward(fake({\"a\": 5}))\n    with pytest.raises(ValueError): fn([\"p\", \"q\"], [\"a\"])\ndef test_custom_weights():\n    long = \"a \" * 80\n    fn, _ = make_judge_reward(fake({long: 10}), w_judge=1.0, w_len=0.0)\n    assert fn([\"p\"], [long]) == pytest.approx([1.0])\n";
+function hl(src) { return src.split("\n").map(line => { const ci = line.indexOf("#"); let code = ci >= 0 ? line.slice(0, ci) : line, cm = ci >= 0 ? line.slice(ci) : ""; code = esc(code).replace(/\b(import|from|def|assert|and|is|None|return|for|in|with|lambda)\b/g, '<span class="kw">$1</span>').replace(/\b(scale_score|word_count|length_ok|make_judge_reward|fake|test_\w+|abs|all|sum|replace)\b/g, '<span class="fn">$1</span>'); return code + (cm ? `<span class="cm">${esc(cm)}</span>` : ""); }).join("\n"); }
+$("#tests").innerHTML = hl(TESTS);
+$$("[data-copy]").forEach(b => b.onclick = async () => { const t = b.dataset.copy === "tests" ? TESTS : $("#tpl").textContent; const lab = b.textContent; try { await navigator.clipboard.writeText(t); b.textContent = "Copied"; } catch (e) { b.textContent = "Select and copy"; } setTimeout(() => b.textContent = lab, 1800); });
+let ck = store.get("checks", {});
+["c1", "c2", "c3", "c4"].forEach(id => { const c = $("#" + id); c.checked = !!ck[id]; c.onchange = () => { ck[id] = c.checked; store.set("checks", ck); if (ck.c1 && ck.c2 && ck.c3) mark("checkpoint"); }; });
+
+paintProg(); route();
+});
+</script>
+</body>
+</html>

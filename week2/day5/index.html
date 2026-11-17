@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Week 2 · Day 5 · Reward Models · RLE Lab</title>
+<meta name="author" content="Kanishk Singh Parihar">
+<script>(function(){var t=null;try{t=localStorage.getItem("rle-theme")}catch(e){}if(!t){try{t=JSON.parse(window.name||"{}")["rle-theme"]}catch(e){}}if(t&&t!=="system")document.documentElement.setAttribute("data-mode",t)})()</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="stylesheet" href="../../assets/day.css">
+<script src="../../assets/site.js" defer></script>
+<style>
+.pgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; }
+.ctl { display: grid; grid-template-columns: 120px 1fr 64px; gap: 10px; align-items: center; margin: 8px 0; }
+.ctl output { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+.arena-in { width: 100%; font-family: var(--mono); font-size: 15px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.flag { margin-top: 10px; padding: 10px 12px; border-radius: 12px; font-weight: 500; border-left: 5px solid var(--c); background: var(--surface-2); }
+.advgrid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 14px; }
+.acol h4 { margin: 0 0 6px; font-size: 14px; color: var(--muted); }
+.arow { display: grid; grid-template-columns: 44px 1fr 74px; gap: 8px; align-items: center; margin: 4px 0; font-family: var(--mono); font-size: 14px; }
+.arow b { text-align: right; font-variant-numeric: tabular-nums; }
+.atrack { position: relative; height: 16px; border-radius: 8px; background: var(--bg-2); }
+.atrack::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; background: var(--line); }
+.atrack i { position: absolute; top: 0; height: 100%; border-radius: 8px; }
+.ok1 { color: var(--good); font-weight: 700; } .bad1 { color: var(--bad); font-weight: 700; }
+.note-ill { color: var(--muted); font-size: 13px; }
+textarea.arena-in { resize: vertical; line-height: 1.5; }
+.formgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.formgrid label { display: grid; gap: 4px; font-size: 14px; font-weight: 600; color: var(--muted); }
+.formgrid input { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; font-family: var(--mono); padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.lt th, .lt td { padding: 8px 6px; font-size: 14px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<canvas id="confetti" aria-hidden="true"></canvas>
+<header class="site-header">
+  <div class="site-bar">
+    <a class="brand" href="../../index.html"><span class="mark" aria-hidden="true"></span>RLE Lab</a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="../../index.html">Roadmap</a>
+      <a href="../../index.html#roadmap">Week 1</a>
+      <a href="../day1/index.html">W2 Day 1</a>
+      <a href="../day2/index.html">W2 Day 2</a>
+      <a href="../day3/index.html">W2 Day 3</a>
+      <a href="../day4/index.html">W2 Day 4</a>
+      <a href="index.html" aria-current="page">W2 Day 5</a>
+    </nav>
+    <button class="theme-btn" data-theme-btn type="button">Theme</button>
+  </div>
+  <div class="daybar">
+    <nav class="tabs" aria-label="Week 2 Day 5 sections">
+      <a class="tab" href="#lecture" data-v="lecture" style="--c: var(--c1)"><span class="dot"></span>1 · Lecture<span class="tick">✓</span></a>
+      <a class="tab" href="#notes" data-v="notes" style="--c: var(--c2)"><span class="dot"></span>2 · Notes<span class="tick">✓</span></a>
+      <a class="tab" href="#playground" data-v="playground" style="--c: var(--c3)"><span class="dot"></span>3 · Playground<span class="tick">✓</span></a>
+      <a class="tab" href="#quiz" data-v="quiz" style="--c: var(--c4)"><span class="dot"></span>4 · Quiz<span class="tick">✓</span></a>
+      <a class="tab" href="#checkpoint" data-v="checkpoint" style="--c: var(--good)"><span class="dot"></span>5 · Checkpoint<span class="tick">✓</span></a>
+    </nav>
+    <div class="prog"><span id="progTxt">0 of 5 done</span><div class="ring" id="ring"><span id="ringPct">0%</span></div></div>
+  </div>
+</header>
+
+<main>
+<section class="view" id="v-lecture">
+  <span class="eyebrow">Week 2 · Day 5 · 6 min lecture · 2 hours today</span>
+  <h2>Reward models and rubrics as rewards</h2>
+  <p class="lead">The other main reward tool: a model that outputs one number, trained with the Bradley-Terry loss. Then how rubrics are now used directly as rewards, and what that means for small judges.</p>
+  <div class="lecture">
+    <div>
+      <video id="vid" controls preload="metadata" src="w2d5_part1.mp4#t=0.6"></video>
+      <p style="color:var(--muted);font-size:14px;margin:8px 0 0">Part <span id="partNo">1</span> of 2 · part 2 starts automatically.</p>
+    </div>
+    <div class="card"><h3 style="margin-bottom:10px">Chapters</h3><div class="chapters" id="chapters"></div></div>
+  </div>
+</section>
+
+<section class="view" id="v-notes">
+  <span class="eyebrow">Week 2 · Day 5 · Notes</span>
+  <h2>One number per answer</h2>
+  <p class="lead">A judge writes its grade; a reward model computes it in one forward pass. Both are proxies, and both can be combined with code checks and rubrics.</p>
+
+  <div class="card note" style="--c: var(--c5)">
+    <div class="head"><div class="num">1</div><h3>What a reward model is</h3></div>
+    <p>A language model whose final layer is replaced by a single number output. It reads prompt + answer and returns a score in one forward pass, with no text generated. It's trained on <b>preference pairs</b>: (prompt, chosen, rejected), labelled by people or by a strong judge. That's the data classic RLHF collected.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--good)">
+    <div class="head"><div class="num">2</div><h3>Bradley-Terry</h3></div>
+<pre class="code">P(chosen beats rejected) = σ(r_chosen − r_rejected)      <span class="cm"># σ(x) = 1 / (1 + e^(−x))</span>
+loss = −log σ(r_chosen − r_rejected)</pre>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Score difference (chosen − rejected)</th><th>P(chosen wins)</th><th>Loss</th></tr></thead>
+      <tbody><tr><td>0</td><td>0.50</td><td>0.69 (= ln 2)</td></tr><tr><td>+2</td><td>0.88</td><td>0.13</td></tr><tr><td>−2 (wrong order)</td><td>0.12</td><td>2.13</td></tr></tbody>
+    </table></div>
+    <p>Only differences matter, like chess ratings. In code, compute σ and the loss in a numerically stable way (no <code>exp</code> of a large positive number).</p>
+  </div>
+
+  <div class="card note" style="--c: var(--c1)">
+    <div class="head"><div class="num">3</div><h3>Evaluating a reward model</h3></div>
+    <ul>
+      <li><b>Pair accuracy</b> on held-out pairs: how often the chosen answer gets the higher score.</li>
+      <li><b>Length-matched pairs:</b> if accuracy drops a lot when both answers have similar length, the model mostly learned "longer is better".</li>
+      <li>It's still a <b>proxy</b>: Gao, Schulman and Hilton's overoptimization study was about reward models. Keep a held-out evaluation.</li>
+    </ul>
+  </div>
+
+  <div class="card note" style="--c: var(--c3)">
+    <div class="head"><div class="num">4</div><h3>Reward model, judge, or both?</h3></div>
+    <div class="tablewrap"><table>
+      <thead><tr><th></th><th>Reward model</th><th>LLM judge</th></tr></thead>
+      <tbody>
+        <tr><td>Speed per answer</td><td>Very fast (one pass)</td><td>Slower (writes text)</td></tr>
+        <tr><td>Needs preference data</td><td>Yes</td><td>No</td></tr>
+        <tr><td>Explains its grade</td><td>No</td><td>Yes</td></tr>
+        <tr><td>To change it</td><td>Retrain</td><td>Edit the prompt or rubric</td></tr>
+      </tbody>
+    </table></div>
+    <p><b>Generative reward models</b> sit between: a judge model trained specifically to grade. <b>Process rewards</b> grade each reasoning step instead of only the final answer; they catch lucky answers built on wrong steps, but step labels are costly.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--c4)">
+    <div class="head"><div class="num">5</div><h3>Rubrics as Rewards (Gunjal et al., Scale AI, 2025)</h3></div>
+    <p>Write a rubric for each prompt, have a judge grade answers with it, and train with GRPO. This extends verifiable-style RL to areas like medicine and science, where code can't check the answer.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Aggregation</th><th>How</th><th>Finding</th></tr></thead>
+      <tbody>
+        <tr><td><b>Explicit</b></td><td>Judge each item separately; normalized weighted sum (Essential 1.0, Important 0.7, Optional 0.3, Pitfall 0.9)</td><td>More brittle</td></tr>
+        <tr><td><b>Implicit</b></td><td>Judge sees all items, gives one holistic 1–10 score, normalized to 0–1</td><td>Worked best in their experiments</td></tr>
+      </tbody>
+    </table></div>
+    <p>They also report that rubric guidance improved judge alignment at every judge size, with the largest gains for smaller judges: good news when your training judge must be small and fast.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--good)">
+    <div class="head"><div class="num">6</div><h3>Deliverable: rubrics for 10 prompts, explicit vs implicit</h3></div>
+<pre class="code" id="tpl"># notes/rubrics_as_rewards.md
+
+For 10 prompts from your Day 3 task:
+- write a 4–6 item rubric per prompt (label each Essential / Important / Optional / Pitfall)
+- take 4 answers per prompt (from your checkpoints)
+- grade them two ways with the same judge:
+  explicit: one call per item, pass/fail → weighted sum
+  implicit: one call with all items → overall 1–10
+
+| Prompt | Spearman(explicit, your ranking) | Spearman(implicit, your ranking) |
+|---|---|---|
+| 1 | | |
+| … | | |
+| mean | | |
+
+Which one ranks answers more like you do? Cost (calls) of each? Your take:</pre>
+    <div class="row" style="margin-top:8px"><button class="btn ghost" data-copy="tpl">Copy template</button></div>
+  </div>
+
+  <div class="card note" style="--c: var(--c5)">
+    <div class="head"><div class="num">7</div><h3>Flip cards</h3></div>
+    <div class="flips" id="flips"></div>
+  </div>
+  <div class="card note" style="--c: var(--c3)">
+    <div class="head"><div class="num">8</div><h3>Glossary</h3></div>
+    <input class="gloss-in" id="glossQ" type="search" placeholder="Filter terms…" aria-label="Filter glossary">
+    <dl class="gloss" id="gloss"><div><dt>Reward model (RM)</dt><dd>A language model with a one-number output head.</dd></div><div><dt>Preference pair</dt><dd>A prompt with a chosen answer and a rejected answer.</dd></div><div><dt>Bradley-Terry</dt><dd>P(A beats B) = σ(r_A − r_B).</dd></div><div><dt>Sigmoid (σ)</dt><dd>1 / (1 + e^(−x)); squashes any number into 0–1.</dd></div><div><dt>BT loss</dt><dd>−log σ(r_chosen − r_rejected).</dd></div><div><dt>Pair accuracy</dt><dd>Share of held-out pairs where the chosen answer scores higher.</dd></div><div><dt>Length-matched pairs</dt><dd>Pairs whose answers have similar length, to test for length bias.</dd></div><div><dt>Generative reward model</dt><dd>A judge model trained specifically to grade.</dd></div><div><dt>Outcome reward</dt><dd>Grades only the final answer.</dd></div><div><dt>Process reward</dt><dd>Grades each step of the reasoning.</dd></div><div><dt>Rubrics as Rewards (RaR)</dt><dd>Per-prompt rubrics graded by a judge, used as the GRPO reward.</dd></div><div><dt>Explicit vs implicit</dt><dd>Weighted sum of per-item grades vs one holistic score using all items.</dd></div></dl>
+    <script>document.getElementById("glossQ").addEventListener("input",function(e){var q=e.target.value.toLowerCase();document.querySelectorAll("#gloss>div").forEach(function(d){d.hidden=q&&d.textContent.toLowerCase().indexOf(q)<0})})</script>
+  </div>
+</section>
+
+<section class="view" id="v-playground">
+  <span class="eyebrow">Week 2 · Day 5 · Playground</span>
+  <h2>Scores, wins and rubrics</h2>
+  <p class="lead">Move two scores and watch the probability and loss; fit ratings from a tiny tournament; and aggregate a rubric explicitly.</p>
+  <div class="pgrid">
+    <div class="card">
+      <h3>Bradley-Terry explorer</h3>
+      <div class="ctl"><label for="bA">r chosen</label><input id="bA" type="range" min="-4" max="4" step="0.1" value="1"><output id="bAo">1.0</output></div>
+      <div class="ctl"><label for="bB">r rejected</label><input id="bB" type="range" min="-4" max="4" step="0.1" value="-1"><output id="bBo">-1.0</output></div>
+      <div class="stats" style="margin-top:10px"><div class="stat">difference<b id="bD">–</b></div><div class="stat">P(chosen wins)<b id="bP">–</b></div><div class="stat">loss<b id="bL">–</b></div></div>
+    </div>
+    <div class="card">
+      <h3>Fit ratings from wins</h3>
+      <div class="formgrid">
+        <label>A beat B<input id="w1" type="number" min="0" value="8"></label><label>B beat A<input id="w2" type="number" min="0" value="2"></label>
+        <label>B beat C<input id="w3" type="number" min="0" value="7"></label><label>C beat B<input id="w4" type="number" min="0" value="3"></label>
+        <label>A beat C<input id="w5" type="number" min="0" value="9"></label><label>C beat A<input id="w6" type="number" min="0" value="1"></label>
+      </div>
+      <div class="tablewrap"><table class="lt"><thead><tr><th>item</th><th>rating</th><th>P(beats next)</th></tr></thead><tbody id="fitRows"></tbody></table></div>
+    </div>
+    <div class="card">
+      <h3>Explicit rubric aggregation</h3>
+      <div id="rarList"></div>
+      <div class="stats" style="margin-top:10px"><div class="stat">explicit reward<b id="rarR">–</b></div></div>
+      <p class="note-ill" style="margin:0">Weights from the RaR paper: Essential 1.0, Important 0.7, Optional 0.3, Pitfall 0.9 (a pitfall item passes when the answer avoids it).</p>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="v-quiz">
+  <span class="eyebrow">Week 2 · Day 5 · Quiz</span>
+  <h2>10 questions. Score 8+ to pass.</h2>
+  <p class="lead">Multiple choice plus three you compute yourself.</p>
+  <div class="qwrap card" id="quiz"></div>
+</section>
+
+<section class="view" id="v-checkpoint">
+  <span class="eyebrow">Week 2 · Day 5 · Checkpoint</span>
+  <h2>The maths of preferences</h2>
+  <p class="lead">Bradley-Terry in plain Python, plus an explicit-vs-implicit rubric comparison on your Day 3 task.</p>
+  <div class="grid2">
+    <div class="card">
+      <h3>Tasks</h3>
+      <ol>
+        <li>Write <code>rm/bt.py</code> with:
+          <ul>
+            <li><code>bt_prob(r_a, r_b)</code>: σ(r_a − r_b), no overflow for huge differences</li>
+            <li><code>bt_loss(r_chosen, r_rejected)</code>: −log σ(difference), numerically stable</li>
+            <li><code>pair_accuracy(scores, pairs)</code>: share of (chosen, rejected) pairs ranked right; ties count ½; <code>ValueError</code> if empty</li>
+            <li><code>fit_bt(items, wins, iters=2000, lr=0.05)</code>: gradient ascent on the BT log-likelihood with an L2 pull of 0.01 toward 0; returns ratings shifted to mean 0; <code>ValueError</code> if no items</li>
+          </ul>
+        </li>
+        <li>Pass the 21 tests on the right.</li>
+        <li>Fill in <code>notes/rubrics_as_rewards.md</code>: 10 prompts, explicit vs implicit.</li>
+      </ol>
+      <h3 style="margin-top:14px">Your checklist</h3>
+      <div class="checks">
+        <label><input type="checkbox" id="c1"> 21 tests pass</label>
+        <label><input type="checkbox" id="c2"> 10 per-prompt rubrics written</label>
+        <label><input type="checkbox" id="c3"> Explicit vs implicit compared</label>
+        <label><input type="checkbox" id="c4"> Notes sent to Claude</label>
+      </div>
+    </div>
+    <div>
+      <p style="margin-top:0"><b>Tests</b>: save as <code>rm/test_bt.py</code>, run <code>pytest</code>.</p>
+      <div class="codebox"><button class="btn" data-copy="tests">Copy</button><pre class="code" id="tests" style="max-height:640px"></pre></div>
+      <p class="note-ill">Checked against a reference solution: all 21 pass. Versions with a flipped sign in σ, an unstable loss, ties counted as losses, or a loser that never moves down each fail at least one.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="site-foot"><div class="in"><span>RLE Lab · Kanishk Singh Parihar · Week 2 · Day 5 of 7</span><a href="../../index.html">Back to the roadmap</a></div></footer>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const store = { get: (k, d) => window.RLE.store.get("w2d5-" + k, d), set: (k, v) => window.RLE.store.set("w2d5-" + k, v) };
+const CSS = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+const VIEWS = ["lecture", "notes", "playground", "quiz", "checkpoint"];
+let done = store.get("done", {});
+function mark(v) { if (!done[v]) { done[v] = true; store.set("done", done); paintProg(); } }
+function paintProg() { const n = VIEWS.filter(v => done[v]).length; $("#progTxt").textContent = `${n} of 5 done`; $("#ring").style.setProperty("--p", n * 20); $("#ringPct").textContent = n * 20 + "%"; $$(".tab").forEach(t => t.classList.toggle("done", !!done[t.dataset.v])); }
+function route() {
+  const h = location.hash.slice(1), v = VIEWS.includes(h) ? h : "lecture";
+  $$(".view").forEach(s => s.classList.toggle("on", s.id === "v-" + v));
+  $$(".tab").forEach(t => { if (t.dataset.v === v) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current"); });
+  if (v === "notes") setTimeout(() => mark("notes"), 20000);
+  window.scrollTo({ top: 0 });
+}
+addEventListener("hashchange", route);
+
+const CH = [["Intro", 0.0], ["Words you need", 19.0], ["What a reward model is", 48.0], ["Preference pairs", 63.1], ["Bradley-Terry", 78.7], ["The loss", 103.0], ["Evaluating an RM", 131.4], ["RM or judge?", 152.6], ["RMs are proxies", 177.1], ["Process rewards", 195.7], ["Rubrics as Rewards", 217.2], ["Explicit vs implicit", 239.9], ["Small judges", 259.0], ["Mixing rewards", 275.8], ["Recap", 297.0], ["Your checkpoint", 320.4]];
+const PARTS = [["w2d5_part1.mp4", 0], ["w2d5_part2.mp4", 177.1]], TOTAL = 345.3;
+const vid = $("#vid"); let part = 0;
+const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+function loadPart(i, at = 0, play = false) { if (part !== i) { part = i; vid.src = PARTS[i][0]; $("#partNo").textContent = i + 1; } const go = () => { vid.currentTime = at; if (play) vid.play().catch(() => {}); }; if (vid.readyState >= 1) go(); else vid.addEventListener("loadedmetadata", go, { once: true }); }
+function seekGlobal(t) { const i = t >= PARTS[1][1] ? 1 : 0; loadPart(i, t - PARTS[i][1], true); }
+$("#chapters").innerHTML = CH.map(([n, t]) => `<button class="chap" data-t="${t}"><time>${fmt(t)}</time><span>${n}</span></button>`).join("");
+$$(".chap").forEach(b => b.addEventListener("click", () => seekGlobal(+b.dataset.t)));
+vid.addEventListener("ended", () => { if (part === 0) loadPart(1, 0, true); else mark("lecture"); });
+vid.addEventListener("timeupdate", () => { const t = PARTS[part][1] + vid.currentTime; let cur = 0; CH.forEach(([, s], i) => { if (t >= s) cur = i; }); $$(".chap").forEach((b, i) => b.classList.toggle("now", i === cur)); if (t / TOTAL > 0.9) mark("lecture"); });
+
+/* ---- math ---- */
+function btProb(a, b) { const d = a - b; if (d >= 0) return 1 / (1 + Math.exp(-d)); const e = Math.exp(d); return e / (1 + e); }
+function btLoss(c, r) { const d = c - r; return d >= 0 ? Math.log1p(Math.exp(-d)) : -d + Math.log1p(Math.exp(d)); }
+function fitBT(items, wins, iters = 2000, lr = 0.05) { const s = {}; items.forEach(i => s[i] = 0); for (let t = 0; t < iters; t++) { const g = {}; items.forEach(i => g[i] = -0.01 * s[i]); wins.forEach(([w, l]) => { const p = btProb(s[w], s[l]); g[w] += 1 - p; g[l] -= 1 - p; }); items.forEach(i => s[i] += lr * g[i]); } const m = items.reduce((a, i) => a + s[i], 0) / items.length; items.forEach(i => s[i] -= m); return s; }
+
+/* flip cards */
+const FL = [["Reward model", "concept", "An LM with a one-number head. One fast pass per answer.", "--c5"],
+  ["Preference pair", "data", "Prompt + chosen + rejected.", "--c1"],
+  ["Bradley-Terry", "maths", "P(win) = σ(r_chosen − r_rejected). Only differences matter.", "--good"],
+  ["Loss at Δ = 0", "maths", "−log 0.5 = 0.69.", "--good"],
+  ["Length-matched pairs", "eval", "Big accuracy drop → it learned 'longer is better'.", "--bad"],
+  ["Process reward", "concept", "Grades each step, not just the final answer.", "--c4"],
+  ["RaR implicit", "rubrics", "All items in one holistic judge score. Worked best.", "--c3"],
+  ["Small judges", "rubrics", "Rubric guidance helped every judge size, small ones most.", "--c2"]];
+$("#flips").innerHTML = FL.map(([f, k, b, c]) => `<button class="flip" style="--c: var(${c})" aria-label="${esc(f)}: flip to reveal"><div class="in"><div class="f">${esc(f)}<small>${k} · tap to flip</small></div><div class="bk">${esc(b)}</div></div></button>`).join("");
+$$(".flip").forEach(b => b.onclick = () => b.classList.toggle("on"));
+
+/* BT explorer */
+function bLab() { const a = +$("#bA").value, b = +$("#bB").value; $("#bAo").textContent = a.toFixed(1); $("#bBo").textContent = b.toFixed(1); $("#bD").textContent = (a - b).toFixed(1); $("#bP").textContent = btProb(a, b).toFixed(2); $("#bL").textContent = btLoss(a, b).toFixed(2); }
+["#bA", "#bB"].forEach(s => $(s).addEventListener("input", () => { bLab(); mark("playground"); })); bLab();
+
+/* fit */
+function fitLab() {
+  const n = ["#w1", "#w2", "#w3", "#w4", "#w5", "#w6"].map(s => Math.max(0, Math.min(50, Math.floor(+$(s).value || 0))));
+  const pairs = [["A", "B"], ["B", "A"], ["B", "C"], ["C", "B"], ["A", "C"], ["C", "A"]], wins = [];
+  pairs.forEach((p, i) => { for (let k = 0; k < n[i]; k++) wins.push(p); });
+  const s = fitBT(["A", "B", "C"], wins, 1500, 0.05); const order = ["A", "B", "C"].sort((x, y) => s[y] - s[x]);
+  $("#fitRows").innerHTML = order.map((k, i) => `<tr><td>${k}</td><td>${s[k] >= 0 ? "+" : ""}${s[k].toFixed(2)}</td><td>${i < 2 ? btProb(s[k], s[order[i + 1]]).toFixed(2) + " vs " + order[i + 1] : "–"}</td></tr>`).join("");
+}
+["#w1", "#w2", "#w3", "#w4", "#w5", "#w6"].forEach(s => $(s).addEventListener("input", () => { fitLab(); mark("playground"); })); fitLab();
+
+/* explicit RaR */
+const W = { Essential: 1.0, Important: 0.7, Optional: 0.3, Pitfall: 0.9 };
+const RI = store.get("rar", [["Identifies the main finding", "Essential", true], ["Gives the sample size", "Important", true], ["Mentions limitations", "Important", false], ["Uses plain language", "Optional", true], ["Avoids recommending a dosage", "Pitfall", true]]);
+function rarLab() {
+  $("#rarList").innerHTML = RI.map(([c, l, ok], i) => `<div class="ctl" style="grid-template-columns:28px 1fr 130px"><input type="checkbox" data-i="${i}" ${ok ? "checked" : ""} aria-label="${esc(c)} satisfied"><span>${esc(c)}</span><span class="pill">${l} ${W[l].toFixed(1)}</span></div>`).join("");
+  const tot = RI.reduce((a, r) => a + W[r[1]], 0), got = RI.reduce((a, r) => a + (r[2] ? W[r[1]] : 0), 0);
+  $("#rarR").textContent = (got / tot).toFixed(2);
+  $$("#rarList [data-i]").forEach(x => x.onchange = () => { RI[+x.dataset.i][2] = x.checked; store.set("rar", RI); rarLab(); mark("playground"); });
+}
+rarLab();
+
+/* quiz */
+const Q = [
+  { q: "What does a reward model output?", o: ["A written critique", "One number per (prompt, answer)", "A new answer", "A rubric"], a: 1, e: "One forward pass, one score." },
+  { q: "A preference pair contains…", o: ["Two prompts", "A prompt, a chosen answer and a rejected answer", "A score and a label", "A rubric and a reference"], a: 1, e: "That's the data reward models learn from." },
+  { num: true, q: "r_chosen = 1.5, r_rejected = −0.5. P(chosen wins) under Bradley-Terry? (2 decimals)", ans: 0.8808, tol: 0.006, e: "σ(2) ≈ 0.88.", fmt: 2 },
+  { num: true, q: "Both answers score 3.0. What is the BT loss? (2 decimals)", ans: 0.6931, tol: 0.006, e: "−log σ(0) = ln 2 ≈ 0.69.", fmt: 2 },
+  { num: true, q: "A reward model ranks 3 of 4 held-out pairs right and ties on the last one. Pair accuracy? (3 decimals)", ans: 0.875, tol: 0.001, e: "(3 + 0.5) / 4 = 0.875.", fmt: 3 },
+  { q: "Accuracy is 78% overall but 58% on length-matched pairs. Most likely…", o: ["The RM is great", "It largely learned that longer is better", "The pairs are mislabelled", "Bradley-Terry is wrong"], a: 1, e: "Take length away and most of the skill disappears." },
+  { q: "Compared with a judge, a reward model is…", o: ["Slower but explains itself", "Faster per answer, but needs preference data and gives no reasons", "Always more accurate", "Unable to be overoptimized"], a: 1, e: "Speed and cost vs flexibility and explanations." },
+  { q: "A process reward…", o: ["Grades only the final answer", "Grades each reasoning step", "Counts tokens", "Is the same as a KL penalty"], a: 1, e: "It can catch lucky answers built on wrong steps." },
+  { q: "In Rubrics as Rewards, which aggregation worked best?", o: ["Explicit weighted sum", "Implicit: one holistic score with all items", "No rubric", "Random"], a: 1, e: "Explicit weighting was described as more brittle." },
+  { q: "Rubric guidance helped judges…", o: ["Only the largest", "Of every size, smaller ones most", "Not at all", "Only human judges"], a: 1, e: "Useful when training judges must be small and fast." }
+];
+let qi = 0, score = 0, answered = false, best = store.get("best", 0);
+function renderQ() {
+  const box = $("#quiz");
+  if (qi >= Q.length) {
+    const pass = score >= 8; best = Math.max(best, score); store.set("best", best); if (pass) { mark("quiz"); burst(); }
+    box.innerHTML = `<div class="score"><div class="big">${score}/${Q.length}</div><h3>${pass ? "Passed. Nice work." : "Not yet: 8 to pass."}</h3><p style="color:var(--muted)">Best so far: ${best}/${Q.length}.</p><div class="row" style="justify-content:center"><button class="btn ghost" id="retry">Retry quiz</button>${pass ? '<a class="btn good" href="#checkpoint">Go to checkpoint</a>' : ""}</div></div>`;
+    $("#retry").onclick = () => { qi = 0; score = 0; renderQ(); }; return;
+  }
+  const it = Q[qi]; answered = false;
+  if (!it.num) it.ord = it.o.map((_, i) => i).sort(() => Math.random() - .5);
+  box.innerHTML = `<div class="qhead"><span class="pill">Question ${qi + 1} of ${Q.length}</span><div class="qbar"><i style="width:${qi / Q.length * 100}%"></i></div><b style="font-variant-numeric:tabular-nums">${score} pts</b></div>
+    <h3 style="font-size:23px">${esc(it.q)}</h3>
+    ${it.num ? `<form class="numin" id="numf"><label for="numv" class="sr">Your answer</label><input id="numv" inputmode="decimal" placeholder="e.g. 0.50" autocomplete="off"><button class="btn">Check</button></form>` : `<div class="opts">${it.ord.map((oi, k) => `<button class="opt" data-i="${oi}">${String.fromCharCode(65 + k)}. ${esc(it.o[oi])}</button>`).join("")}</div>`}
+    <div id="fbox"></div>`;
+  if (it.num) { $("#numv").focus(); $("#numf").onsubmit = e => { e.preventDefault(); if (answered) return; const v = parseFloat($("#numv").value.replace(",", ".")); if (isNaN(v)) { $("#fbox").innerHTML = `<div class="fb" style="--c:var(--c4)">Type a number, like 0.50.</div>`; return; } finish(Math.abs(v - it.ans) <= it.tol); }; }
+  else $$(".opt").forEach(b => b.onclick = () => { if (answered) return; const i = +b.dataset.i; $$(".opt").forEach(x => { x.disabled = true; if (+x.dataset.i === it.a) x.classList.add("right"); }); if (i !== it.a) b.classList.add("wrong"); finish(i === it.a); });
+}
+function finish(ok) {
+  answered = true; const it = Q[qi]; if (ok) score++;
+  $("#fbox").innerHTML = `<div class="fb" style="--c:var(${ok ? "--good" : "--bad"})"><b>${ok ? "Correct." : "Not quite."}</b> ${it.num ? `Answer: ${it.ans.toFixed(it.fmt ?? 2)}. ` : ""}${esc(it.e)}</div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" id="next">${qi + 1 < Q.length ? "Next question" : "See score"}</button></div>`;
+  if (ok && !reduce) burst(40); $("#next").focus(); $("#next").onclick = () => { qi++; renderQ(); };
+}
+renderQ();
+
+const cc = $("#confetti"), cx2 = cc.getContext("2d"); let bits = [];
+function burst(n = 160) { if (reduce) return; cc.width = innerWidth; cc.height = innerHeight; const cols = ["--c1", "--c2", "--c3", "--c4", "--good"].map(CSS); const start = !bits.length; for (let i = 0; i < n; i++) bits.push({ x: innerWidth / 2, y: innerHeight / 3, vx: (Math.random() - .5) * 16, vy: Math.random() * -14 - 4, c: cols[i % 5], life: 120 }); if (start) loopConf(); }
+function loopConf() { cx2.clearRect(0, 0, cc.width, cc.height); bits.forEach(b => { b.x += b.vx; b.y += b.vy; b.vy += .45; b.life--; cx2.fillStyle = b.c; cx2.fillRect(b.x, b.y, 8, 5); }); bits = bits.filter(b => b.life > 0); if (bits.length) requestAnimationFrame(loopConf); else cx2.clearRect(0, 0, cc.width, cc.height); }
+
+const TESTS = "import math, pytest\nfrom bt import bt_prob, bt_loss, pair_accuracy, fit_bt\n\ndef test_prob_equal():          assert bt_prob(3, 3) == 0.5\ndef test_prob_two_points():     assert abs(bt_prob(2, 0) - 0.880797) < 1e-6\ndef test_prob_only_difference():assert abs(bt_prob(102, 100) - bt_prob(2, 0)) < 1e-12\ndef test_prob_symmetric():      assert abs(bt_prob(1.3, 0.2) + bt_prob(0.2, 1.3) - 1) < 1e-12\ndef test_prob_no_overflow():    assert bt_prob(-1000, 0) == 0.0 and bt_prob(1000, 0) == 1.0\n\ndef test_loss_equal():          assert abs(bt_loss(0, 0) - math.log(2)) < 1e-12\ndef test_loss_two():            assert abs(bt_loss(2, 0) - 0.126928) < 1e-6\ndef test_loss_wrong_order():    assert abs(bt_loss(0, 2) - 2.126928) < 1e-6\ndef test_loss_matches_prob():   assert abs(bt_loss(0.7, -0.4) + math.log(bt_prob(0.7, -0.4))) < 1e-12\ndef test_loss_stable_large():   assert abs(bt_loss(-1000, 0) - 1000) < 1e-9 and bt_loss(1000, 0) < 1e-300 + 1e-12\n\nS = {\"a\": 2.0, \"b\": 1.0, \"c\": 1.0, \"d\": 0.0}\ndef test_acc_all_right():       assert pair_accuracy(S, [(\"a\", \"b\"), (\"b\", \"d\")]) == 1.0\ndef test_acc_mixed():           assert pair_accuracy(S, [(\"a\", \"b\"), (\"d\", \"a\")]) == 0.5\ndef test_acc_tie_half():        assert pair_accuracy(S, [(\"b\", \"c\"), (\"a\", \"d\")]) == 0.75\ndef test_acc_empty():\n    with pytest.raises(ValueError): pair_accuracy(S, [])\n\ndef test_fit_order():\n    wins = [(\"A\", \"B\")] * 8 + [(\"B\", \"A\")] * 2 + [(\"B\", \"C\")] * 8 + [(\"C\", \"B\")] * 2 + [(\"A\", \"C\")] * 9 + [(\"C\", \"A\")]\n    s = fit_bt([\"A\", \"B\", \"C\"], wins); assert s[\"A\"] > s[\"B\"] > s[\"C\"]\ndef test_fit_mean_zero():\n    s = fit_bt([\"A\", \"B\"], [(\"A\", \"B\")] * 3 + [(\"B\", \"A\")]); assert abs(sum(s.values())) < 1e-9\ndef test_fit_recovers_prob():\n    s = fit_bt([\"A\", \"B\"], [(\"A\", \"B\")] * 75 + [(\"B\", \"A\")] * 25, iters=4000)\n    assert abs(bt_prob(s[\"A\"], s[\"B\"]) - 0.75) < 0.02\ndef test_fit_undefeated_finite():\n    s = fit_bt([\"A\", \"B\"], [(\"A\", \"B\")] * 5); assert math.isfinite(s[\"A\"]) and s[\"A\"] > s[\"B\"]\ndef test_fit_no_games():        assert fit_bt([\"A\", \"B\"], []) == {\"A\": 0.0, \"B\": 0.0}\ndef test_fit_empty():\n    with pytest.raises(ValueError): fit_bt([], [])\ndef test_fit_loser_goes_down():\n    s = fit_bt([\"A\", \"B\", \"C\"], [(\"A\", \"B\")] * 10); assert s[\"A\"] > s[\"C\"] > s[\"B\"]\n";
+function hl(src) { return src.split("\n").map(line => { const ci = line.indexOf("#"); let code = ci >= 0 ? line.slice(0, ci) : line, cm = ci >= 0 ? line.slice(ci) : ""; code = esc(code).replace(/\b(import|from|def|assert|and|is|None|return|for|in|with|lambda)\b/g, '<span class="kw">$1</span>').replace(/\b(bt_prob|bt_loss|pair_accuracy|fit_bt|test_\w+|abs|all|sum|replace)\b/g, '<span class="fn">$1</span>'); return code + (cm ? `<span class="cm">${esc(cm)}</span>` : ""); }).join("\n"); }
+$("#tests").innerHTML = hl(TESTS);
+$$("[data-copy]").forEach(b => b.onclick = async () => { const t = b.dataset.copy === "tests" ? TESTS : $("#tpl").textContent; const lab = b.textContent; try { await navigator.clipboard.writeText(t); b.textContent = "Copied"; } catch (e) { b.textContent = "Select and copy"; } setTimeout(() => b.textContent = lab, 1800); });
+let ck = store.get("checks", {});
+["c1", "c2", "c3", "c4"].forEach(id => { const c = $("#" + id); c.checked = !!ck[id]; c.onchange = () => { ck[id] = c.checked; store.set("checks", ck); if (ck.c1 && ck.c2 && ck.c3) mark("checkpoint"); }; });
+
+paintProg(); route();
+});
+</script>
+</body>
+</html>
