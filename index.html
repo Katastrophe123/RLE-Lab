@@ -72,6 +72,7 @@
       <a href="days/day5/index.html">Day 5</a>
       <a href="days/day6/index.html">Day 6</a>
       <a href="days/day7/index.html">Day 7</a>
+      <a href="#week2">Week 2</a>
     </nav>
     <button class="theme-btn" data-theme-btn type="button">Theme</button>
   </div>
@@ -80,7 +81,7 @@
 <main>
   <section class="hero">
     <div>
-      <span class="eyebrow">Kanishk Singh Parihar · RL Engineer · Week 1</span>
+      <span class="eyebrow">Kanishk Singh Parihar · RL Engineer · Weeks 1–2</span>
       <h1>Build the loop. <em>Trust the verifier.</em></h1>
       <p class="lead">Seven days, about 20 hours, one project: train a small model with GRPO against a verifier you write, break that verifier on purpose, harden it, and publish the results.</p>
       <div class="row" style="margin-top:20px">
@@ -91,9 +92,9 @@
     <div class="summary card">
       <div class="row" style="justify-content:space-between"><b>Your progress</b><span class="pill" id="todayPill">Day 1</span></div>
       <div class="stats">
-        <div class="stat"><b id="sDays">0/7</b><span>days complete</span></div>
+        <div class="stat"><b id="sDays">0/14</b><span>days complete</span></div>
         <div class="stat"><b id="sSteps">0</b><span>steps done</span></div>
-        <div class="stat"><b>20h</b><span>planned</span></div>
+        <div class="stat"><b>40h</b><span>planned</span></div>
       </div>
       <div class="bar" aria-hidden="true"><i id="weekBar" style="width:0%"></i></div>
       <p style="margin:0;color:var(--muted);font-size:14px">Saved in this browser only.</p>
@@ -101,10 +102,16 @@
   </section>
 
   <div class="section-head" id="roadmap">
-    <div><span class="eyebrow">The week</span><h2>Roadmap</h2></div>
+    <div><span class="eyebrow">Week 1 · Build the loop</span><h2>Roadmap</h2></div>
     <p style="margin:0;color:var(--muted)">2 hours on weekdays · 5 hours on Saturday and Sunday</p>
   </div>
   <div class="road" id="road"></div>
+
+  <div class="section-head" id="week2">
+    <div><span class="eyebrow">Week 2 · Judges and rubrics</span><h2>When there's no single right answer</h2></div>
+    <p style="margin:0;color:var(--muted)">Training runs on the weekend · Thu–Fri for catch-up</p>
+  </div>
+  <div class="road" id="road2"></div>
 
   <div class="section-head">
     <div><span class="eyebrow">Every day</span><h2>How a day works</h2></div>
@@ -147,35 +154,50 @@ document.addEventListener("DOMContentLoaded", () => {
     { d: 6, date: "Tue Nov 17", h: 2, href: "days/day6/index.html", t: "Compare runs; production RL infrastructure", out: "v1 vs v2 results table, architecture notes" },
     { d: 7, date: "Wed Nov 18", h: 2, href: "days/day7/index.html", t: "Publish and plan week 2", out: "README write-up, public post, week 2 picks" }
   ];
+  const W2 = [
+    { d: 1, date: "Tue Nov 17", h: 2, href: "week2/day1/index.html", t: "LLM judges and rubrics", out: "judge_utils.py with 26 tests, a rubric from your job" },
+    { d: 2, date: "Wed Nov 18", h: 2, t: "Does your judge agree with people?", out: "50 hand labels, agreement and kappa, a judge report" },
+    { d: 3, date: "Sat Nov 21", h: 5, t: "Train with a judge as the reward", out: "A GRPO run with a rubric-judge reward" },
+    { d: 4, date: "Sun Nov 22", h: 5, t: "Hack the judge", out: "A judge attack catalog and a hardened judge v2" },
+    { d: 5, date: "Mon Nov 23", h: 2, t: "Reward models and rubrics as rewards", out: "Bradley-Terry notes and a rubric-based reward" },
+    { d: 6, date: "Tue Nov 24", h: 2, t: "Compare runs when the grader is a model", out: "Debiased, length-aware win rates for both runs" },
+    { d: 7, date: "Wed Nov 25", h: 2, t: "Publish week 2, plan week 3", out: "Week 2 write-up and a public post" }
+  ];
   const STEPS = ["lecture", "notes", "playground", "quiz", "checkpoint"];
-  const dayDone = d => { const o = S.get(`d${d}-done`, {}); return STEPS.filter(s => o[s]).length; };
+  const doneOf = (pre, d) => { const o = S.get(`${pre}${d}-done`, {}); return STEPS.filter(s => o[s]).length; };
+  const dayDone = d => doneOf("d", d);
   const idx = Math.floor((new Date() - START) / 864e5) + 1;
   const todayDay = Math.min(7, Math.max(1, idx));
-  document.getElementById("todayPill").textContent = idx < 1 ? "Starts Nov 12" : idx > 7 ? "Week finished" : "Today: Day " + todayDay;
-
+  const todayStr = new Date().toDateString().slice(0, 10);
   let complete = 0, steps = 0;
-  const road = document.getElementById("road");
-  road.innerHTML = DAYS.map(x => {
-    const n = dayDone(x.d); steps += n; const full = n === 5; if (full) complete++;
-    const open = !!x.href;
-    const cls = full ? "done" : open ? "open" : "locked";
-    const status = full ? '<span class="pill done">Complete</span>' : open ? `<span class="pill on">${n ? "In progress" : "Available"}</span>` : `<span class="pill">${x.d === 8 ? "Coming next" : "Coming soon"}</span>`;
-    const right = open
-      ? `<div class="right">${status}<div class="bar" aria-label="${n} of 5 steps"><i style="width:${n * 20}%"></i></div><a class="btn" href="${x.href}">${n ? "Continue" : "Open"} Day ${x.d}</a></div>`
-      : `<div class="right">${status}</div>`;
-    return `<article class="stop ${cls}"><span class="node" aria-hidden="true">${full ? "✓" : x.d}</span>
-      <div class="card"><div><div class="meta"><b style="color:var(--ink)">Day ${x.d}</b><span>· ${x.date}</span><span>· ${x.h}h</span>${x.d === todayDay && idx >= 1 && idx <= 7 ? '<span class="today-tag">· TODAY</span>' : ""}</div>
-      <h3>${x.t}</h3><p>You finish with: ${x.out}</p></div>${right}</div></article>`;
-  }).join("");
-  document.getElementById("sDays").textContent = `${complete}/7`;
+  function render(list, pre, el, wk) {
+    document.getElementById(el).innerHTML = list.map(x => {
+      const n = doneOf(pre, x.d); steps += n; const full = n === 5; if (full) complete++;
+      const open = !!x.href;
+      const cls = full ? "done" : open ? "open" : "locked";
+      const firstLocked = list.find(y => !y.href);
+      const status = full ? '<span class="pill done">Complete</span>' : open ? `<span class="pill on">${n ? "In progress" : "Available"}</span>` : `<span class="pill">${firstLocked && firstLocked.d === x.d ? "Coming next" : "Coming soon"}</span>`;
+      const right = open
+        ? `<div class="right">${status}<div class="bar" aria-label="${n} of 5 steps"><i style="width:${n * 20}%"></i></div><a class="btn" href="${x.href}">${n ? "Continue" : "Open"} Day ${x.d}</a></div>`
+        : `<div class="right">${status}</div>`;
+      const isToday = wk && x.date === todayStr;
+      return `<article class="stop ${cls}"><span class="node" aria-hidden="true">${full ? "✓" : x.d}</span>
+        <div class="card"><div><div class="meta"><b style="color:var(--ink)">${wk ? "Week 2 · " : ""}Day ${x.d}</b><span>· ${x.date}</span><span>· ${x.h}h</span>${isToday ? '<span class="today-tag">· TODAY</span>' : ""}</div>
+        <h3>${x.t}</h3><p>You finish with: ${x.out}</p></div>${right}</div></article>`;
+    }).join("");
+  }
+  render(DAYS, "d", "road", false); render(W2, "w2d", "road2", true);
+  const all = [...DAYS.filter(x => x.href).map(x => ({ ...x, pre: "d", lab: "Day " + x.d })), ...W2.filter(x => x.href).map(x => ({ ...x, pre: "w2d", lab: "W2 Day " + x.d }))];
+  const tp = W2.map(x => ({ ...x, lab: "Week 2 · Day " + x.d })).find(x => x.date === todayStr);
+  document.getElementById("todayPill").textContent = tp ? "Today: " + tp.lab : "Self-paced";
+  document.getElementById("sDays").textContent = `${complete}/14`;
   document.getElementById("sSteps").textContent = steps;
-  document.getElementById("weekBar").style.width = (steps / 35 * 100) + "%";
+  document.getElementById("weekBar").style.width = (steps / 70 * 100) + "%";
   const cb = document.getElementById("continueBtn");
-  const openDays = DAYS.filter(x => x.href);
-  const next = openDays.find(x => dayDone(x.d) < 5) || openDays[openDays.length - 1];
-  const nd = dayDone(next.d);
+  const next = all.find(x => doneOf(x.pre, x.d) < 5) || all[all.length - 1];
+  const nd = doneOf(next.pre, next.d);
   cb.href = next.href;
-  cb.textContent = (nd === 0 ? "Start" : nd < 5 ? "Continue" : "Review") + " Day " + next.d;
+  cb.textContent = (nd === 0 ? "Start" : nd < 5 ? "Continue" : "Review") + " " + next.lab;
 
   document.getElementById("week").innerHTML = DAYS.map(x => `<div><b>${x.h}h</b><i class="${x.h > 2 ? "we" : ""}" style="height:${x.h / 5 * 80}px"></i><span>${x.date.slice(0, 3)}</span></div>`).join("");
 
