@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Week 2 · Day 6 · Compare with a Judge · RLE Lab</title>
+<meta name="author" content="Kanishk Singh Parihar">
+<script>(function(){var t=null;try{t=localStorage.getItem("rle-theme")}catch(e){}if(!t){try{t=JSON.parse(window.name||"{}")["rle-theme"]}catch(e){}}if(t&&t!=="system")document.documentElement.setAttribute("data-mode",t)})()</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="stylesheet" href="../../assets/day.css">
+<script src="../../assets/site.js" defer></script>
+<style>
+.pgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; }
+.ctl { display: grid; grid-template-columns: 120px 1fr 64px; gap: 10px; align-items: center; margin: 8px 0; }
+.ctl output { font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+.arena-in { width: 100%; font-family: var(--mono); font-size: 15px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.flag { margin-top: 10px; padding: 10px 12px; border-radius: 12px; font-weight: 500; border-left: 5px solid var(--c); background: var(--surface-2); }
+.advgrid { display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 14px; }
+.acol h4 { margin: 0 0 6px; font-size: 14px; color: var(--muted); }
+.arow { display: grid; grid-template-columns: 44px 1fr 74px; gap: 8px; align-items: center; margin: 4px 0; font-family: var(--mono); font-size: 14px; }
+.arow b { text-align: right; font-variant-numeric: tabular-nums; }
+.atrack { position: relative; height: 16px; border-radius: 8px; background: var(--bg-2); }
+.atrack::after { content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; background: var(--line); }
+.atrack i { position: absolute; top: 0; height: 100%; border-radius: 8px; }
+.ok1 { color: var(--good); font-weight: 700; } .bad1 { color: var(--bad); font-weight: 700; }
+.note-ill { color: var(--muted); font-size: 13px; }
+textarea.arena-in { resize: vertical; line-height: 1.5; }
+.formgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.formgrid label { display: grid; gap: 4px; font-size: 14px; font-weight: 600; color: var(--muted); }
+.formgrid input { width: 100%; min-width: 0; box-sizing: border-box; font: inherit; font-family: var(--mono); padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.lt th, .lt td { padding: 8px 6px; font-size: 14px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<canvas id="confetti" aria-hidden="true"></canvas>
+<header class="site-header">
+  <div class="site-bar">
+    <a class="brand" href="../../index.html"><span class="mark" aria-hidden="true"></span>RLE Lab</a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="../../index.html">Roadmap</a>
+      <a href="../../index.html#roadmap">Week 1</a>
+      <a href="../day1/index.html">W2 Day 1</a>
+      <a href="../day2/index.html">W2 Day 2</a>
+      <a href="../day3/index.html">W2 Day 3</a>
+      <a href="../day4/index.html">W2 Day 4</a>
+      <a href="../day5/index.html">W2 Day 5</a>
+      <a href="index.html" aria-current="page">W2 Day 6</a>
+      <a href="../day7/index.html">W2 Day 7</a>
+    </nav>
+    <button class="theme-btn" data-theme-btn type="button">Theme</button>
+  </div>
+  <div class="daybar">
+    <nav class="tabs" aria-label="Week 2 Day 6 sections">
+      <a class="tab" href="#lecture" data-v="lecture" style="--c: var(--c1)"><span class="dot"></span>1 · Lecture<span class="tick">✓</span></a>
+      <a class="tab" href="#notes" data-v="notes" style="--c: var(--c2)"><span class="dot"></span>2 · Notes<span class="tick">✓</span></a>
+      <a class="tab" href="#playground" data-v="playground" style="--c: var(--c3)"><span class="dot"></span>3 · Playground<span class="tick">✓</span></a>
+      <a class="tab" href="#quiz" data-v="quiz" style="--c: var(--c4)"><span class="dot"></span>4 · Quiz<span class="tick">✓</span></a>
+      <a class="tab" href="#checkpoint" data-v="checkpoint" style="--c: var(--good)"><span class="dot"></span>5 · Checkpoint<span class="tick">✓</span></a>
+    </nav>
+    <div class="prog"><span id="progTxt">0 of 5 done</span><div class="ring" id="ring"><span id="ringPct">0%</span></div></div>
+  </div>
+</header>
+
+<main>
+<section class="view" id="v-lecture">
+  <span class="eyebrow">Week 2 · Day 6 · 6 min lecture · 2 hours today</span>
+  <h2>Compare runs when the grader is a model</h2>
+  <p class="lead">Head-to-head win rates with a held-out judge, both orders, a sign test and an interval, then the big one: how much of the gain is just longer answers?</p>
+  <div class="lecture">
+    <div>
+      <video id="vid" controls preload="metadata" src="w2d6_part1.mp4#t=0.6"></video>
+      <p style="color:var(--muted);font-size:14px;margin:8px 0 0">Part <span id="partNo">1</span> of 2 · part 2 starts automatically.</p>
+    </div>
+    <div class="card"><h3 style="margin-bottom:10px">Chapters</h3><div class="chapters" id="chapters"></div></div>
+  </div>
+</section>
+
+<section class="view" id="v-notes">
+  <span class="eyebrow">Week 2 · Day 6 · Notes</span>
+  <h2>Fair comparisons without a right answer</h2>
+  <p class="lead">Week 1 counted right and wrong answers. This week the answers are summaries, so you compare them in pairs with a judge, and guard against the judge's biases.</p>
+
+  <div class="card note" style="--c: var(--c1)">
+    <div class="head"><div class="num">1</div><h3>The head-to-head setup</h3></div>
+    <ul>
+      <li><b>200 test articles</b> the model never trained on; one greedy summary per run (A = base, B = chosen checkpoint).</li>
+      <li><b>Held-out judge</b>, never the training judge: run B was trained to please it.</li>
+      <li><b>Both orders</b> for every pair; keep a winner only if both orders agree, else tie (Day 1's <code>pairwise_debiased</code>).</li>
+    </ul>
+  </div>
+
+  <div class="card note" style="--c: var(--good)">
+    <div class="head"><div class="num">2</div><h3>Win rate, sign test, interval</h3></div>
+<pre class="code">win rate (B) = (wins + ½ · ties) / n
+sign test    = two-sided exact binomial on wins vs losses (ties dropped)    <span class="cm"># week 1's McNemar idea</span>
+interval     = bootstrap: resample comparisons 2,000×, middle 95%</pre>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Example</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>B wins 110, A wins 70, ties 20</td><td>win rate 120 / 200 = <b>60%</b></td></tr>
+        <tr><td>Sign test on 110 vs 70</td><td>p ≈ 0.004 (under 1 in 100 by luck)</td></tr>
+        <tr><td>Bootstrap 95% interval</td><td>about 53–67%</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+
+  <div class="card note" style="--c: var(--c4)">
+    <div class="head"><div class="num">3</div><h3>Length control</h3></div>
+    <p>Judges like longer answers, and RL against a judge often makes answers longer. So part of a win rate can be length, not quality. First, report each run's average length.</p>
+    <p>Then report a <b>length-controlled win rate</b>. Length-controlled AlpacaEval (Dubois et al., 2024) fits a simple model of the judge's preference that includes the length difference, and asks what the preference would be at equal length. It raised the benchmark's Spearman correlation with Chatbot Arena rankings from 0.94 to 0.98.</p>
+<pre class="code">P(B wins) = σ(a + b · Δlength)        <span class="cm"># fit a, b by logistic regression; ties = 0.5 targets</span>
+length-controlled win rate = σ(a)     <span class="cm"># the win rate when Δlength = 0</span></pre>
+    <p class="note-ill">This is a simplified version of their method (they include more terms), and fine for your scale.</p>
+  </div>
+
+  <div class="card note" style="--c: var(--c3)">
+    <div class="head"><div class="num">4</div><h3>People, more checkpoints, a second judge</h3></div>
+    <ul>
+      <li><b>Spot check:</b> 30 pairs, blind to which run is which. If the judge agrees with you on ~25, good; near 15, it's guessing on this task.</li>
+      <li><b>Several checkpoints:</b> compare them in pairs and fit Bradley-Terry ratings (Day 5's <code>fit_bt</code>), the way Chatbot Arena ranks models.</li>
+      <li><b>A second held-out judge</b> from another family: agreement raises confidence; disagreement goes in the report.</li>
+    </ul>
+  </div>
+
+  <div class="card note" style="--c: var(--good)">
+    <div class="head"><div class="num">5</div><h3>Deliverable: results/compare_judged.md</h3></div>
+<pre class="code" id="tpl"># Base vs chosen checkpoint, judged
+
+Judges: held-out 1 = ______, held-out 2 = ______ (never used for training)
+Articles: 200 test · both orders · greedy decoding
+
+| Metric | Judge 1 | Judge 2 |
+|---|---|---|
+| B wins / A wins / ties | | |
+| Win rate [95% CI] | | |
+| Sign test p | | |
+| Length-controlled win rate | | |
+
+Average words: A __ · B __
+Spot check (30 blind pairs): judge agreed with me on __ / 30
+Bradley-Terry ratings (base, step 100, 150, 250): ...
+
+Verdict: B better / no clear difference / B worse — and how much is length?</pre>
+    <div class="row" style="margin-top:8px"><button class="btn ghost" data-copy="tpl">Copy template</button></div>
+  </div>
+
+  <div class="card note" style="--c: var(--c5)">
+    <div class="head"><div class="num">6</div><h3>Flip cards</h3></div>
+    <div class="flips" id="flips"></div>
+  </div>
+  <div class="card note" style="--c: var(--c3)">
+    <div class="head"><div class="num">7</div><h3>Glossary</h3></div>
+    <input class="gloss-in" id="glossQ" type="search" placeholder="Filter terms…" aria-label="Filter glossary">
+    <dl class="gloss" id="gloss"><div><dt>Head-to-head</dt><dd>Two runs answer the same prompt; a judge picks the better answer.</dd></div><div><dt>Win rate</dt><dd>(wins + ½ ties) / number of comparisons.</dd></div><div><dt>Sign test</dt><dd>Exact binomial test on wins vs losses, ignoring ties.</dd></div><div><dt>Bootstrap interval</dt><dd>Resample comparisons many times; the middle 95% of win rates.</dd></div><div><dt>Length bias</dt><dd>Judges preferring longer answers regardless of quality.</dd></div><div><dt>Length-controlled win rate</dt><dd>The win rate a model of the judge predicts at equal length.</dd></div><div><dt>Logistic regression</dt><dd>Fits P(win) = σ(a + b·x) to data.</dd></div><div><dt>Spot check</dt><dd>A small blind sample you grade yourself to check the judge.</dd></div><div><dt>Bradley-Terry ratings</dt><dd>One rating per model, fitted from pairwise results.</dd></div><div><dt>Chatbot Arena</dt><dd>A public leaderboard that ranks models from human pairwise votes.</dd></div></dl>
+    <script>document.getElementById("glossQ").addEventListener("input",function(e){var q=e.target.value.toLowerCase();document.querySelectorAll("#gloss>div").forEach(function(d){d.hidden=q&&d.textContent.toLowerCase().indexOf(q)<0})})</script>
+  </div>
+</section>
+
+<section class="view" id="v-playground">
+  <span class="eyebrow">Week 2 · Day 6 · Playground</span>
+  <h2>Is the win real, and is it length?</h2>
+  <p class="lead">Compute a win rate with its test and interval, simulate a length-loving judge, and size up your spot check.</p>
+  <div class="pgrid">
+    <div class="card">
+      <h3>Win rate calculator</h3>
+      <div class="formgrid">
+        <label>B wins<input id="wW" type="number" min="0" value="110"></label>
+        <label>A wins<input id="wL" type="number" min="0" value="70"></label>
+        <label>ties<input id="wT" type="number" min="0" value="20"></label>
+      </div>
+      <div class="stats" style="margin-top:12px"><div class="stat">win rate<b id="wR">–</b></div><div class="stat">95% CI<b id="wC">–</b></div><div class="stat">sign test p<b id="wP">–</b></div></div>
+      <div class="flag" id="wFlag" style="--c: var(--c1)"></div>
+    </div>
+    <div class="card">
+      <h3>A length-loving judge</h3>
+      <div class="ctl"><label for="lq">true quality edge</label><input id="lq" type="range" min="-0.5" max="1" step="0.05" value="0.1"><output id="lqo">0.10</output></div>
+      <div class="ctl"><label for="lb">judge's length taste</label><input id="lb" type="range" min="0" max="2" step="0.1" value="1"><output id="lbo">1.0</output></div>
+      <div class="ctl"><label for="ll">B's extra words</label><input id="ll" type="range" min="0" max="30" value="12"><output id="llo">12</output></div>
+      <div class="row"><button class="btn" id="lRun">Simulate 400 comparisons</button></div>
+      <div class="stats" style="margin-top:10px"><div class="stat">raw win rate<b id="lRaw">–</b></div><div class="stat">length-controlled<b id="lLC">–</b></div><div class="stat">true (no length)<b id="lTrue">–</b></div></div>
+    </div>
+    <div class="card">
+      <h3>Spot check</h3>
+      <div class="ctl"><label for="sk">judge agreed</label><input id="sk" type="range" min="0" max="30" value="25"><output id="sko">25</output></div>
+      <div class="stats" style="margin-top:10px"><div class="stat">agreement<b id="skA">–</b></div><div class="stat">95% range<b id="skC">–</b></div></div>
+      <div class="flag" id="skFlag" style="--c: var(--c1)"></div>
+      <p class="note-ill" style="margin:0">Wilson interval on 30 pairs. 50% means coin-flipping.</p>
+    </div>
+  </div>
+</section>
+
+<section class="view" id="v-quiz">
+  <span class="eyebrow">Week 2 · Day 6 · Quiz</span>
+  <h2>10 questions. Score 8+ to pass.</h2>
+  <p class="lead">Multiple choice plus three you compute yourself.</p>
+  <div class="qwrap card" id="quiz"></div>
+</section>
+
+<section class="view" id="v-checkpoint">
+  <span class="eyebrow">Week 2 · Day 6 · Checkpoint</span>
+  <h2>Compare your runs fairly</h2>
+  <p class="lead">Four functions, then a real head-to-head between your base model and your chosen checkpoint. Send me the report.</p>
+  <div class="grid2">
+    <div class="card">
+      <h3>Tasks</h3>
+      <ol>
+        <li>Write <code>eval/compare_judged.py</code> with:
+          <ul>
+            <li><code>win_rate(verdicts)</code>: verdicts are <code>"A"</code>, <code>"B"</code> or <code>"tie"</code>; B's win rate with ties as half; <code>ValueError</code> if empty or bad labels</li>
+            <li><code>sign_test_p(wins, losses)</code>: two-sided exact binomial; 1.0 if nothing decided</li>
+            <li><code>bootstrap_win_rate_ci(verdicts, n_boot=2000, seed=0, level=0.95)</code>: percentile interval using <code>random.Random(seed)</code></li>
+            <li><code>length_controlled_win_rate(verdicts, len_diffs, iters=3000, lr=0.5)</code>: fit σ(a + b·d) by gradient ascent, with d = length difference ÷ its std (ties = 0.5 targets); centre d for the fit, then return the prediction at a length difference of 0</li>
+          </ul>
+        </li>
+        <li>Pass the 20 tests on the right.</li>
+        <li>Run the head-to-head (200 articles, both orders, held-out judge) and a 30-pair spot check.</li>
+        <li>Fill in <code>results/compare_judged.md</code>.</li>
+      </ol>
+      <h3 style="margin-top:14px">Your checklist</h3>
+      <div class="checks">
+        <label><input type="checkbox" id="c1"> 20 tests pass</label>
+        <label><input type="checkbox" id="c2"> Head-to-head done, both orders</label>
+        <label><input type="checkbox" id="c3"> Report with length-controlled win rate and spot check</label>
+        <label><input type="checkbox" id="c4"> Report sent to Claude</label>
+      </div>
+    </div>
+    <div>
+      <p style="margin-top:0"><b>Tests</b>: save as <code>eval/test_compare_judged.py</code>, run <code>pytest</code>.</p>
+      <div class="codebox"><button class="btn" data-copy="tests">Copy</button><pre class="code" id="tests" style="max-height:640px"></pre></div>
+      <p class="note-ill">Checked against a reference solution: all 20 pass. Versions that count ties as losses, forget to double the tail, never fit the length term, return the raw win rate, skip resampling or accept bad labels each fail at least one.</p>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="site-foot"><div class="in"><span>RLE Lab · Kanishk Singh Parihar · Week 2 · Day 6 of 7</span><a href="../../index.html">Back to the roadmap</a></div></footer>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const store = { get: (k, d) => window.RLE.store.get("w2d6-" + k, d), set: (k, v) => window.RLE.store.set("w2d6-" + k, v) };
+const CSS = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+const VIEWS = ["lecture", "notes", "playground", "quiz", "checkpoint"];
+let done = store.get("done", {});
+function mark(v) { if (!done[v]) { done[v] = true; store.set("done", done); paintProg(); } }
+function paintProg() { const n = VIEWS.filter(v => done[v]).length; $("#progTxt").textContent = `${n} of 5 done`; $("#ring").style.setProperty("--p", n * 20); $("#ringPct").textContent = n * 20 + "%"; $$(".tab").forEach(t => t.classList.toggle("done", !!done[t.dataset.v])); }
+function route() {
+  const h = location.hash.slice(1), v = VIEWS.includes(h) ? h : "lecture";
+  $$(".view").forEach(s => s.classList.toggle("on", s.id === "v-" + v));
+  $$(".tab").forEach(t => { if (t.dataset.v === v) t.setAttribute("aria-current", "page"); else t.removeAttribute("aria-current"); });
+  if (v === "notes") setTimeout(() => mark("notes"), 20000);
+  window.scrollTo({ top: 0 });
+}
+addEventListener("hashchange", route);
+
+const CH = [["Intro", 0.0], ["Words you need", 19.9], ["Head-to-head setup", 46.2], ["Which judge?", 64.4], ["Win rate", 80.8], ["Both orders", 102.2], ["Sign test", 122.4], ["An interval", 148.4], ["The length trap", 169.3], ["Length-controlled win rate", 188.8], ["Example", 220.6], ["Human spot check", 241.9], ["Many checkpoints", 261.3], ["A second judge", 278.8], ["The report", 293.2], ["Recap", 311.1], ["Your checkpoint", 329.3]];
+const PARTS = [["w2d6_part1.mp4", 0], ["w2d6_part2.mp4", 188.8]], TOTAL = 353.6;
+const vid = $("#vid"); let part = 0;
+const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+function loadPart(i, at = 0, play = false) { if (part !== i) { part = i; vid.src = PARTS[i][0]; $("#partNo").textContent = i + 1; } const go = () => { vid.currentTime = at; if (play) vid.play().catch(() => {}); }; if (vid.readyState >= 1) go(); else vid.addEventListener("loadedmetadata", go, { once: true }); }
+function seekGlobal(t) { const i = t >= PARTS[1][1] ? 1 : 0; loadPart(i, t - PARTS[i][1], true); }
+$("#chapters").innerHTML = CH.map(([n, t]) => `<button class="chap" data-t="${t}"><time>${fmt(t)}</time><span>${n}</span></button>`).join("");
+$$(".chap").forEach(b => b.addEventListener("click", () => seekGlobal(+b.dataset.t)));
+vid.addEventListener("ended", () => { if (part === 0) loadPart(1, 0, true); else mark("lecture"); });
+vid.addEventListener("timeupdate", () => { const t = PARTS[part][1] + vid.currentTime; let cur = 0; CH.forEach(([, s], i) => { if (t >= s) cur = i; }); $$(".chap").forEach((b, i) => b.classList.toggle("now", i === cur)); if (t / TOTAL > 0.9) mark("lecture"); });
+
+/* ---- math ---- */
+function comb(n, k) { let r = 1; for (let i = 1; i <= k; i++) r = r * (n - k + i) / i; return r; }
+function signP(w, l) { const n = w + l; if (!n) return 1; const k = Math.min(w, l); let s = 0; for (let i = 0; i <= k; i++) s += comb(n, i); return Math.min(1, 2 * s / Math.pow(2, n)); }
+const sig = x => x >= 0 ? 1 / (1 + Math.exp(-x)) : Math.exp(x) / (1 + Math.exp(x));
+function lcFit(y, d) { const n = y.length, m = d.reduce((a, b) => a + b, 0) / n, sd = Math.sqrt(d.reduce((a, b) => a + (b - m) ** 2, 0) / n) || 1, z = d.map(x => (x - m) / sd); let a = 0, b = 0; for (let t = 0; t < 1500; t++) { let ga = 0, gb = 0; for (let i = 0; i < n; i++) { const e = y[i] - sig(a + b * z[i]); ga += e; gb += e * z[i]; } a += 0.5 * ga / n; b += 0.5 * gb / n; } return sig(a - b * m / sd); }
+function wilson(k, n, z = 1.96) { const p = k / n, d = 1 + z * z / n, c = (p + z * z / (2 * n)) / d, h = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d; return [Math.max(0, c - h), Math.min(1, c + h)]; }
+
+/* flip cards */
+const FL = [["Which judge?", "setup", "Held-out only. Run B was trained to please the training judge.", "--c2"],
+  ["Win rate", "metric", "(wins + ½ ties) / n.", "--good"],
+  ["Sign test", "stats", "Drop ties; are wins vs losses more lopsided than coins?", "--c1"],
+  ["110 vs 70", "example", "Win rate 60%, p ≈ 0.004, CI ≈ 53–67%.", "--c3"],
+  ["Length trap", "bias", "Judges like long answers; RL often makes answers longer.", "--bad"],
+  ["Length-controlled", "fix", "Fit σ(a + b·Δlen); report σ(a), the equal-length win rate.", "--c4"],
+  ["Spot check", "people", "30 blind pairs. ~25 agree = good; ~15 = guessing.", "--c5"],
+  ["Many checkpoints", "ranking", "Pairwise matches → Bradley-Terry ratings.", "--c1"]];
+$("#flips").innerHTML = FL.map(([f, k, b, c]) => `<button class="flip" style="--c: var(${c})" aria-label="${esc(f)}: flip to reveal"><div class="in"><div class="f">${esc(f)}<small>${k} · tap to flip</small></div><div class="bk">${esc(b)}</div></div></button>`).join("");
+$$(".flip").forEach(b => b.onclick = () => b.classList.toggle("on"));
+
+/* win rate */
+function wLab() {
+  const W = Math.max(0, Math.floor(+$("#wW").value || 0)), L = Math.max(0, Math.floor(+$("#wL").value || 0)), Tt = Math.max(0, Math.floor(+$("#wT").value || 0)), n = W + L + Tt;
+  if (!n) { $("#wR").textContent = $("#wC").textContent = $("#wP").textContent = "–"; return; }
+  const s = [...Array(W).fill(1), ...Array(L).fill(0), ...Array(Tt).fill(0.5)], st = [];
+  for (let b = 0; b < 1000; b++) { let t = 0; for (let i = 0; i < n; i++) t += s[Math.floor(Math.random() * n)]; st.push(t / n); }
+  st.sort((a, b) => a - b); const wr = (W + 0.5 * Tt) / n, p = signP(W, L);
+  $("#wR").textContent = (100 * wr).toFixed(1) + "%"; $("#wC").textContent = `${(100 * st[25]).toFixed(0)}–${(100 * st[975]).toFixed(0)}%`; $("#wP").textContent = p < 0.001 ? p.toExponential(1) : p.toFixed(3);
+  const f = $("#wFlag"); const real = p < 0.05;
+  f.style.setProperty("--c", real ? "var(--good)" : "var(--c4)");
+  f.textContent = real ? (W > L ? "B is preferred, and it's unlikely to be luck. Now check length." : "A is preferred, and it's unlikely to be luck.") : "Can't tell yet: the split could be coin flips.";
+}
+["#wW", "#wL", "#wT"].forEach(s => $(s).addEventListener("input", () => { wLab(); mark("playground"); })); wLab();
+
+/* length-loving judge */
+function lLab() {
+  const q = +$("#lq").value, bl = +$("#lb").value, ex = +$("#ll").value;
+  $("#lqo").textContent = q.toFixed(2); $("#lbo").textContent = bl.toFixed(1); $("#llo").textContent = ex;
+  const y = [], d = []; let wins = 0;
+  for (let i = 0; i < 400; i++) { const dl = ex + (Math.random() - 0.5) * 30; const p = sig(q + bl * dl / 15); const r = Math.random() < p ? 1 : 0; y.push(r); d.push(dl); wins += r; }
+  $("#lRaw").textContent = (100 * wins / 400).toFixed(0) + "%"; $("#lLC").textContent = (100 * lcFit(y, d)).toFixed(0) + "%"; $("#lTrue").textContent = (100 * sig(q)).toFixed(0) + "%";
+}
+$("#lRun").onclick = () => { lLab(); mark("playground"); }; ["#lq", "#lb", "#ll"].forEach(s => $(s).addEventListener("change", () => { lLab(); mark("playground"); })); lLab();
+
+/* spot check */
+function skLab() {
+  const k = +$("#sk").value; $("#sko").textContent = k; const [lo, hi] = wilson(k, 30);
+  $("#skA").textContent = Math.round(100 * k / 30) + "%"; $("#skC").textContent = `${Math.round(100 * lo)}–${Math.round(100 * hi)}%`;
+  const f = $("#skFlag"); const ok = lo > 0.6, guess = lo <= 0.5;
+  f.style.setProperty("--c", ok ? "var(--good)" : guess ? "var(--bad)" : "var(--c4)");
+  f.textContent = ok ? "Clearly better than guessing on this task." : guess ? "Can't rule out guessing. Don't lean on this judge's win rate." : "Somewhat better than guessing; label more pairs.";
+}
+$("#sk").addEventListener("input", () => { skLab(); mark("playground"); }); skLab();
+
+/* quiz */
+const Q = [
+  { q: "Which judge should compare base vs your judge-trained checkpoint?", o: ["The training judge", "A held-out judge from a different family", "The policy itself", "Any judge, it doesn't matter"], a: 1, e: "The checkpoint was optimized to please the training judge." },
+  { num: true, q: "B wins 90, A wins 70, ties 40 (n = 200). B's win rate? (2 decimals)", ans: 0.55, tol: 0.005, e: "(90 + 20) / 200 = 0.55.", fmt: 2 },
+  { q: "The sign test uses…", o: ["All comparisons including ties", "Only decided comparisons (wins and losses)", "Only ties", "Only the longest answers"], a: 1, e: "Ties carry no information about which run is better." },
+  { num: true, q: "Exact two-sided sign test for 6 wins and 0 losses? (3 decimals)", ans: 0.03125, tol: 0.001, e: "2 × (1/2)^6 = 0.031.", fmt: 3 },
+  { q: "Why ask every pair in both orders?", o: ["To double the data", "So position bias can't hand wins to whichever run went first", "Judges require it", "To measure length"], a: 1, e: "Disagreeing orders become ties." },
+  { q: "Run B's answers are 20% longer and it wins 60%. You should…", o: ["Report 60% and stop", "Also report a length-controlled win rate", "Retrain without a judge", "Shorten A's answers by hand"], a: 1, e: "Judges like length; separate it from quality." },
+  { q: "In length-controlled AlpacaEval, controlling for length changed the correlation with Chatbot Arena from…", o: ["0.50 to 0.60", "0.94 to 0.98", "0.98 to 0.94", "0.80 to 0.81"], a: 1, e: "Reported by Dubois et al. (2024)." },
+  { num: true, q: "Fitted model P(B wins) = σ(0.2 + 0.9·Δlen). What is the length-controlled win rate? (2 decimals)", ans: 0.5498, tol: 0.006, e: "σ(0.2) ≈ 0.55: the win rate at Δlen = 0.", fmt: 2 },
+  { q: "The judge agrees with you on 16 of 30 blind pairs. This means…", o: ["The judge is excellent", "It may be close to guessing on this task", "Run B is better", "You need a bigger model"], a: 1, e: "16/30 is near the 50% of coin flips." },
+  { q: "To rank four checkpoints from pairwise judge results, use…", o: ["Average length", "Bradley-Terry ratings", "Only the last checkpoint", "Training reward"], a: 1, e: "As in Day 5, and as Chatbot Arena does." }
+];
+let qi = 0, score = 0, answered = false, best = store.get("best", 0);
+function renderQ() {
+  const box = $("#quiz");
+  if (qi >= Q.length) {
+    const pass = score >= 8; best = Math.max(best, score); store.set("best", best); if (pass) { mark("quiz"); burst(); }
+    box.innerHTML = `<div class="score"><div class="big">${score}/${Q.length}</div><h3>${pass ? "Passed. Nice work." : "Not yet: 8 to pass."}</h3><p style="color:var(--muted)">Best so far: ${best}/${Q.length}.</p><div class="row" style="justify-content:center"><button class="btn ghost" id="retry">Retry quiz</button>${pass ? '<a class="btn good" href="#checkpoint">Go to checkpoint</a>' : ""}</div></div>`;
+    $("#retry").onclick = () => { qi = 0; score = 0; renderQ(); }; return;
+  }
+  const it = Q[qi]; answered = false;
+  if (!it.num) it.ord = it.o.map((_, i) => i).sort(() => Math.random() - .5);
+  box.innerHTML = `<div class="qhead"><span class="pill">Question ${qi + 1} of ${Q.length}</span><div class="qbar"><i style="width:${qi / Q.length * 100}%"></i></div><b style="font-variant-numeric:tabular-nums">${score} pts</b></div>
+    <h3 style="font-size:23px">${esc(it.q)}</h3>
+    ${it.num ? `<form class="numin" id="numf"><label for="numv" class="sr">Your answer</label><input id="numv" inputmode="decimal" placeholder="e.g. 0.50" autocomplete="off"><button class="btn">Check</button></form>` : `<div class="opts">${it.ord.map((oi, k) => `<button class="opt" data-i="${oi}">${String.fromCharCode(65 + k)}. ${esc(it.o[oi])}</button>`).join("")}</div>`}
+    <div id="fbox"></div>`;
+  if (it.num) { $("#numv").focus(); $("#numf").onsubmit = e => { e.preventDefault(); if (answered) return; const v = parseFloat($("#numv").value.replace(",", ".")); if (isNaN(v)) { $("#fbox").innerHTML = `<div class="fb" style="--c:var(--c4)">Type a number, like 0.50.</div>`; return; } finish(Math.abs(v - it.ans) <= it.tol); }; }
+  else $$(".opt").forEach(b => b.onclick = () => { if (answered) return; const i = +b.dataset.i; $$(".opt").forEach(x => { x.disabled = true; if (+x.dataset.i === it.a) x.classList.add("right"); }); if (i !== it.a) b.classList.add("wrong"); finish(i === it.a); });
+}
+function finish(ok) {
+  answered = true; const it = Q[qi]; if (ok) score++;
+  $("#fbox").innerHTML = `<div class="fb" style="--c:var(${ok ? "--good" : "--bad"})"><b>${ok ? "Correct." : "Not quite."}</b> ${it.num ? `Answer: ${it.ans.toFixed(it.fmt ?? 2)}. ` : ""}${esc(it.e)}</div><div class="row" style="justify-content:flex-end;margin-top:12px"><button class="btn" id="next">${qi + 1 < Q.length ? "Next question" : "See score"}</button></div>`;
+  if (ok && !reduce) burst(40); $("#next").focus(); $("#next").onclick = () => { qi++; renderQ(); };
+}
+renderQ();
+
+const cc = $("#confetti"), cx2 = cc.getContext("2d"); let bits = [];
+function burst(n = 160) { if (reduce) return; cc.width = innerWidth; cc.height = innerHeight; const cols = ["--c1", "--c2", "--c3", "--c4", "--good"].map(CSS); const start = !bits.length; for (let i = 0; i < n; i++) bits.push({ x: innerWidth / 2, y: innerHeight / 3, vx: (Math.random() - .5) * 16, vy: Math.random() * -14 - 4, c: cols[i % 5], life: 120 }); if (start) loopConf(); }
+function loopConf() { cx2.clearRect(0, 0, cc.width, cc.height); bits.forEach(b => { b.x += b.vx; b.y += b.vy; b.vy += .45; b.life--; cx2.fillStyle = b.c; cx2.fillRect(b.x, b.y, 8, 5); }); bits = bits.filter(b => b.life > 0); if (bits.length) requestAnimationFrame(loopConf); else cx2.clearRect(0, 0, cc.width, cc.height); }
+
+const TESTS = "import random, pytest\nfrom compare_judged import win_rate, sign_test_p, bootstrap_win_rate_ci, length_controlled_win_rate\n\nV = [\"B\"] * 110 + [\"A\"] * 70 + [\"tie\"] * 20\n\ndef test_win_rate_example():     assert win_rate(V) == 0.6\ndef test_win_rate_ties_half():   assert win_rate([\"tie\", \"tie\", \"B\", \"A\"]) == 0.5\ndef test_win_rate_all_b():       assert win_rate([\"B\"] * 3) == 1.0\ndef test_win_rate_empty():\n    with pytest.raises(ValueError): win_rate([])\ndef test_win_rate_bad_label():\n    with pytest.raises(ValueError): win_rate([\"B\", \"X\"])\n\ndef test_sign_example():         assert abs(sign_test_p(110, 70) - 0.003533) < 1e-5\ndef test_sign_14_6():            assert abs(sign_test_p(14, 6) - 0.11532) < 1e-4\ndef test_sign_symmetric():       assert sign_test_p(3, 9) == sign_test_p(9, 3)\ndef test_sign_no_decided():      assert sign_test_p(0, 0) == 1.0\ndef test_sign_equal():           assert sign_test_p(5, 5) == 1.0\n\ndef test_boot_contains_rate():\n    lo, hi = bootstrap_win_rate_ci(V); assert lo < 0.6 < hi\ndef test_boot_above_half():\n    lo, hi = bootstrap_win_rate_ci(V); assert 0.52 < lo < 0.56 and 0.64 < hi < 0.69\ndef test_boot_deterministic():   assert bootstrap_win_rate_ci(V, seed=4) == bootstrap_win_rate_ci(V, seed=4)\ndef test_boot_all_ties():        assert bootstrap_win_rate_ci([\"tie\"] * 10) == (0.5, 0.5)\n\ndef test_lc_no_length_effect():\n    rng = random.Random(1); v = []; d = []\n    for i in range(400):\n        v.append(\"B\" if rng.random() < 0.6 else \"A\"); d.append(rng.uniform(-50, 50))\n    assert abs(length_controlled_win_rate(v, d) - win_rate(v)) < 0.03\ndef test_lc_removes_pure_length_effect():\n    rng = random.Random(2); v = []; d = []\n    for i in range(400):\n        x = rng.choice([-40, 40, 40, 40]); d.append(x)   # B is usually longer\n        v.append(\"B\" if (x > 0) == (rng.random() < 0.8) else \"A\")  # judge just likes the longer one\n    raw = win_rate(v); lc = length_controlled_win_rate(v, d)\n    assert raw > 0.6 and abs(lc - 0.5) < 0.06\ndef test_lc_keeps_real_quality():\n    rng = random.Random(3); v = []; d = []\n    for i in range(400):\n        x = rng.uniform(-30, 30); d.append(x)\n        v.append(\"B\" if rng.random() < 0.7 else \"A\")\n    assert length_controlled_win_rate(v, d) > 0.64\ndef test_lc_constant_lengths():  assert abs(length_controlled_win_rate([\"B\", \"B\", \"A\", \"tie\"], [0, 0, 0, 0]) - 0.625) < 1e-3\ndef test_lc_length_mismatch():\n    with pytest.raises(ValueError): length_controlled_win_rate([\"B\"], [1, 2])\ndef test_lc_offset_lengths():\n    import math\n    rng = random.Random(7); v = []; d = []\n    for i in range(600):\n        x = 12 + rng.uniform(-15, 15); d.append(x)\n        p = 1 / (1 + math.exp(-(0.1 + x / 15)))\n        v.append(\"B\" if rng.random() < p else \"A\")\n    assert abs(length_controlled_win_rate(v, d) - 0.525) < 0.07\n";
+function hl(src) { return src.split("\n").map(line => { const ci = line.indexOf("#"); let code = ci >= 0 ? line.slice(0, ci) : line, cm = ci >= 0 ? line.slice(ci) : ""; code = esc(code).replace(/\b(import|from|def|assert|and|is|None|return|for|in|with|lambda)\b/g, '<span class="kw">$1</span>').replace(/\b(win_rate|sign_test_p|bootstrap_win_rate_ci|length_controlled_win_rate|test_\w+|abs|all|sum|replace)\b/g, '<span class="fn">$1</span>'); return code + (cm ? `<span class="cm">${esc(cm)}</span>` : ""); }).join("\n"); }
+$("#tests").innerHTML = hl(TESTS);
+$$("[data-copy]").forEach(b => b.onclick = async () => { const t = b.dataset.copy === "tests" ? TESTS : $("#tpl").textContent; const lab = b.textContent; try { await navigator.clipboard.writeText(t); b.textContent = "Copied"; } catch (e) { b.textContent = "Select and copy"; } setTimeout(() => b.textContent = lab, 1800); });
+let ck = store.get("checks", {});
+["c1", "c2", "c3", "c4"].forEach(id => { const c = $("#" + id); c.checked = !!ck[id]; c.onchange = () => { ck[id] = c.checked; store.set("checks", ck); if (ck.c1 && ck.c2 && ck.c3) mark("checkpoint"); }; });
+
+paintProg(); route();
+});
+</script>
+</body>
+</html>

@@ -160,8 +160,8 @@ document.addEventListener("DOMContentLoaded", () => {
     { d: 3, date: "Sat Nov 21", h: 5, href: "week2/day3/index.html", t: "Train with a judge as the reward", out: "judge_reward.py with 19 tests, a judge-reward GRPO run, held-out results" },
     { d: 4, date: "Sun Nov 22", h: 5, href: "week2/day4/index.html", t: "Hack the judge", out: "judge_guard.py with 23 tests, a 12+ attack catalog, before/after numbers" },
     { d: 5, date: "Mon Nov 23", h: 2, href: "week2/day5/index.html", t: "Reward models and rubrics as rewards", out: "bt.py with 21 tests, explicit vs implicit rubric comparison" },
-    { d: 6, date: "Tue Nov 24", h: 2, t: "Compare runs when the grader is a model", out: "Debiased, length-aware win rates for both runs" },
-    { d: 7, date: "Wed Nov 25", h: 2, t: "Publish week 2, plan week 3", out: "Week 2 write-up and a public post" }
+    { d: 6, date: "Tue Nov 24", h: 2, href: "week2/day6/index.html", t: "Compare runs when the grader is a model", out: "compare_judged.py with 20 tests, a length-controlled comparison report" },
+    { d: 7, date: "Wed Nov 25", h: 2, href: "week2/day7/index.html", t: "Publish week 2, plan week 3", out: "release_check.py with 20 tests, write-up, dataset card, post, week 3 pick" }
   ];
   const STEPS = ["lecture", "notes", "playground", "quiz", "checkpoint"];
   const doneOf = (pre, d) => { const o = S.get(`${pre}${d}-done`, {}); return STEPS.filter(s => o[s]).length; };
